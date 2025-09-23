@@ -52,7 +52,6 @@ export const SpecialtyCard: React.FC<SpecialtyCardProps> = ({
         }`}
       >
         <View className="flex-row items-center">
-          <Text className="text-sm mr-2">{icon}</Text>
           <Text
             className={`text-sm font-rubik-medium ${
               selected ? 'text-white' : 'text-text-primary'

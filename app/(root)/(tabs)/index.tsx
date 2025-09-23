@@ -5,48 +5,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui';
+import { DoctorCard, AppointmentCard } from '@/components/Cards';
+import { getFeaturedDoctors, getAppointmentsByPatient } from '@/constants/mockMedicalData';
 import icons from "@/constants/icons";
 import images from "@/constants/images";
 
-// Mock data for development
-const mockUpcomingAppointments = [
-  {
-    id: '1',
-    doctorName: 'นพ.สมชาย ใจดี',
-    specialty: 'อายุรกรรม',
-    date: '2024-01-20',
-    time: '14:00',
-    type: 'ตรวจร่างกาย'
-  },
-  {
-    id: '2',
-    doctorName: 'นพ.วีรวัฒน์ สุขใส',
-    specialty: 'โรคหัวใจ',
-    date: '2024-01-22',
-    time: '10:30',
-    type: 'ตรวจติดตาม'
-  }
-];
-
-const mockPopularDoctors = [
-  {
-    id: '1',
-    name: 'นพ.สมชาย ใจดี',
-    specialty: 'อายุรกรรม',
-    rating: 4.8,
-    experience: '15 ปี'
-  },
-  {
-    id: '2',
-    name: 'นพ.วีรวัฒน์ สุขใส',
-    specialty: 'โรคหัวใจ',
-    rating: 4.9,
-    experience: '12 ปี'
-  }
-];
-
 export default function Dashboard() {
   const { user } = useAuth();
+
+  // Get featured doctors and user's appointments
+  const featuredDoctors = getFeaturedDoctors();
+  const upcomingAppointments = getAppointmentsByPatient('pat-001')
+    .filter(apt => apt.status === 'CONFIRMED' || apt.status === 'PENDING')
+    .slice(0, 2);
 
   const handleBookAppointment = () => {
     router.push('/book-appointment');
@@ -58,6 +29,14 @@ export default function Dashboard() {
 
   const handleViewAllAppointments = () => {
     router.push('/appointments');
+  };
+
+  const handleDoctorPress = (doctorId: string) => {
+    router.push(`/(root)/doctors/${doctorId}`);
+  };
+
+  const handleAppointmentPress = (appointmentId: string) => {
+    router.push(`/(root)/appointments/${appointmentId}`);
   };
 
   return (
@@ -139,28 +118,13 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          {mockUpcomingAppointments.length > 0 ? (
-            mockUpcomingAppointments.map((appointment) => (
-              <Card key={appointment.id} variant="outlined" padding="md" margin="sm">
-                <View className="flex-row justify-between items-center">
-                  <View className="flex-1">
-                    <Text className="text-base font-rubik-semiBold text-text-primary">
-                      {appointment.doctorName}
-                    </Text>
-                    <Text className="text-sm font-rubik text-secondary-600 mt-1">
-                      {appointment.specialty}
-                    </Text>
-                    <Text className="text-sm font-rubik text-secondary-600">
-                      {appointment.date} เวลา {appointment.time}
-                    </Text>
-                  </View>
-                  <View className="items-end">
-                    <Text className="text-xs font-rubik text-primary-600 bg-primary-50 px-2 py-1 rounded">
-                      {appointment.type}
-                    </Text>
-                  </View>
-                </View>
-              </Card>
+          {upcomingAppointments.length > 0 ? (
+            upcomingAppointments.map((appointment) => (
+              <AppointmentCard
+                key={appointment.id}
+                appointment={appointment}
+                onPress={() => handleAppointmentPress(appointment.id)}
+              />
             ))
           ) : (
             <Card variant="outlined" padding="lg">
@@ -181,9 +145,9 @@ export default function Dashboard() {
           )}
         </View>
 
-        {/* Popular Doctors */}
-        <View className="px-5 mt-6">
-          <View className="flex flex-row items-center justify-between mb-4">
+        {/* Featured Doctors */}
+        <View className="mt-6">
+          <View className="flex flex-row items-center justify-between mb-4 px-5">
             <Text className="text-xl font-rubik-bold text-text-primary">
               แพทย์ยอดนิยม
             </Text>
@@ -194,36 +158,18 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {mockPopularDoctors.map((doctor, index) => (
-              <Card
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
+          >
+            {featuredDoctors.map((doctor) => (
+              <DoctorCard
                 key={doctor.id}
-                variant="elevated"
-                padding="md"
-                style={{
-                  marginRight: index < mockPopularDoctors.length - 1 ? 16 : 0,
-                  width: 200
-                }}
-              >
-                <View className="items-center">
-                  <Image
-                    source={images.avatar}
-                    className="size-16 rounded-full mb-3"
-                  />
-                  <Text className="text-sm font-rubik-semiBold text-text-primary text-center">
-                    {doctor.name}
-                  </Text>
-                  <Text className="text-xs font-rubik text-secondary-600 mt-1">
-                    {doctor.specialty}
-                  </Text>
-                  <View className="flex-row items-center mt-2">
-                    <Image source={icons.star} className="size-3 mr-1" />
-                    <Text className="text-xs font-rubik text-secondary-600">
-                      {doctor.rating} • {doctor.experience}
-                    </Text>
-                  </View>
-                </View>
-              </Card>
+                doctor={doctor}
+                variant="featured"
+                onPress={() => handleDoctorPress(doctor.id)}
+              />
             ))}
           </ScrollView>
         </View>

@@ -1,0 +1,400 @@
+import React, { useState } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button, Card } from '@/components/ui';
+import { mockDoctors, mockAppointments } from '@/constants/mockMedicalData';
+import { Availability } from '@/types/medical';
+import icons from '@/constants/icons';
+import images from '@/constants/images';
+
+// Mock availability data
+const mockAvailability: Availability[] = [
+  {
+    id: 'av-1',
+    doctorId: '1',
+    dayOfWeek: 1, // Monday
+    startTime: '09:00',
+    endTime: '12:00',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: 'av-2',
+    doctorId: '1',
+    dayOfWeek: 1, // Monday
+    startTime: '14:00',
+    endTime: '17:00',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: 'av-3',
+    doctorId: '1',
+    dayOfWeek: 3, // Wednesday
+    startTime: '09:00',
+    endTime: '12:00',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z'
+  },
+  {
+    id: 'av-4',
+    doctorId: '1',
+    dayOfWeek: 5, // Friday
+    startTime: '09:00',
+    endTime: '12:00',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z'
+  }
+];
+
+const dayNames = {
+  1: 'จันทร์',
+  2: 'อังคาร',
+  3: 'พุธ',
+  4: 'พฤหัสบดี',
+  5: 'ศุกร์',
+  6: 'เสาร์',
+  7: 'อาทิตย์'
+};
+
+export default function DoctorDetail() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
+  const [selectedTab, setSelectedTab] = useState<'about' | 'availability' | 'reviews'>('about');
+
+  // Find doctor by ID
+  const doctor = mockDoctors.find(d => d.id === id);
+
+  if (!doctor) {
+    return (
+      <SafeAreaView className="bg-white h-full">
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-lg font-rubik-semiBold text-text-primary">
+            ไม่พบข้อมูลแพทย์
+          </Text>
+          <Button
+            title="กลับ"
+            onPress={() => router.back()}
+            variant="outline"
+            size="sm"
+            style={{ marginTop: 16 }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const doctorName = `${doctor.user.firstName} ${doctor.user.lastName}`;
+  const doctorAvailability = mockAvailability.filter(av => av.doctorId === doctor.id);
+
+  // Get doctor's appointments for statistics
+  const doctorAppointments = mockAppointments.filter(apt => apt.doctor.id === doctor.id);
+  const completedAppointments = doctorAppointments.filter(apt => apt.status === 'COMPLETED');
+
+  const handleBookAppointment = () => {
+    if (!user) {
+      Alert.alert(
+        'กรุณาเข้าสู่ระบบ',
+        'คุณต้องเข้าสู่ระบบก่อนจองนัดหมาย',
+        [
+          { text: 'ยกเลิก', style: 'cancel' },
+          { text: 'เข้าสู่ระบบ', onPress: () => router.push('/sign-in') }
+        ]
+      );
+      return;
+    }
+
+    router.push({
+      pathname: '/book-appointment',
+      params: { doctorId: doctor.id }
+    });
+  };
+
+  const renderAboutTab = () => (
+    <View className="px-5 py-4">
+      {/* Bio */}
+      <View className="mb-6">
+        <Text className="text-lg font-rubik-semiBold text-text-primary mb-3">
+          เกี่ยวกับแพทย์
+        </Text>
+        <Text className="text-base font-rubik text-secondary-600 leading-6">
+          {doctor.bio || 'ไม่มีข้อมูลประวัติแพทย์'}
+        </Text>
+      </View>
+
+      {/* Qualifications */}
+      <View className="mb-6">
+        <Text className="text-lg font-rubik-semiBold text-text-primary mb-3">
+          คุณสมบัติ
+        </Text>
+        <View className="space-y-2">
+          <View className="flex-row items-center">
+            <View className="w-2 h-2 bg-primary-600 rounded-full mr-3" />
+            <Text className="text-base font-rubik text-secondary-600">
+              ใบอนุญาตแพทย์: {doctor.licenseNumber}
+            </Text>
+          </View>
+          <View className="flex-row items-center">
+            <View className="w-2 h-2 bg-primary-600 rounded-full mr-3" />
+            <Text className="text-base font-rubik text-secondary-600">
+              ประสบการณ์: {doctor.experienceYears} ปี
+            </Text>
+          </View>
+          <View className="flex-row items-center">
+            <View className="w-2 h-2 bg-primary-600 rounded-full mr-3" />
+            <Text className="text-base font-rubik text-secondary-600">
+              ความเชี่ยวชาญ: {doctor.specialty.name}
+            </Text>
+          </View>
+          {doctor.roomNumber && (
+            <View className="flex-row items-center">
+              <View className="w-2 h-2 bg-primary-600 rounded-full mr-3" />
+              <Text className="text-base font-rubik text-secondary-600">
+                ห้องตรวจ: {doctor.roomNumber}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* Contact Info */}
+      <View className="mb-6">
+        <Text className="text-lg font-rubik-semiBold text-text-primary mb-3">
+          ติดต่อ
+        </Text>
+        <View className="space-y-2">
+          <View className="flex-row items-center">
+            <Image source={icons.person} className="size-4 mr-3" tintColor="#64748b" />
+            <Text className="text-base font-rubik text-secondary-600">
+              {doctor.user.email}
+            </Text>
+          </View>
+          {doctor.user.phone && (
+            <View className="flex-row items-center">
+              <Image source={icons.phone} className="size-4 mr-3" tintColor="#64748b" />
+              <Text className="text-base font-rubik text-secondary-600">
+                {doctor.user.phone}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderAvailabilityTab = () => (
+    <View className="px-5 py-4">
+      <Text className="text-lg font-rubik-semiBold text-text-primary mb-4">
+        ตารางเวลาทำการ
+      </Text>
+
+      {doctorAvailability.length > 0 ? (
+        <View className="space-y-3">
+          {doctorAvailability.map((availability) => (
+            <Card key={availability.id} variant="outlined" padding="md">
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center">
+                  <View className="w-3 h-3 bg-success-500 rounded-full mr-3" />
+                  <Text className="text-base font-rubik-semiBold text-text-primary">
+                    {dayNames[availability.dayOfWeek as keyof typeof dayNames]}
+                  </Text>
+                </View>
+                <Text className="text-base font-rubik text-secondary-600">
+                  {availability.startTime} - {availability.endTime}
+                </Text>
+              </View>
+            </Card>
+          ))}
+        </View>
+      ) : (
+        <Card variant="outlined" padding="lg">
+          <View className="items-center">
+            <Text className="text-base font-rubik text-secondary-600">
+              ไม่มีตารางเวลาทำการ
+            </Text>
+          </View>
+        </Card>
+      )}
+    </View>
+  );
+
+  const renderReviewsTab = () => (
+    <View className="px-5 py-4">
+      <Text className="text-lg font-rubik-semiBold text-text-primary mb-4">
+        รีวิวและคะแนน
+      </Text>
+
+      <Card variant="outlined" padding="lg">
+        <View className="items-center">
+          <Text className="text-base font-rubik text-secondary-600">
+            ยังไม่มีรีวิว
+          </Text>
+          <Text className="text-sm font-rubik text-secondary-500 mt-2">
+            เป็นคนแรกที่รีวิวแพทย์ท่านนี้
+          </Text>
+        </View>
+      </Card>
+    </View>
+  );
+
+  return (
+    <SafeAreaView className="bg-background-secondary h-full">
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View className="bg-white px-5 py-4 border-b border-secondary-200">
+          <View className="flex-row items-center">
+            <TouchableOpacity onPress={() => router.back()} className="mr-4">
+              <Image source={icons.backArrow} className="size-6" tintColor="#64748b" />
+            </TouchableOpacity>
+            <Text className="text-xl font-rubik-bold text-text-primary">
+              ข้อมูลแพทย์
+            </Text>
+          </View>
+        </View>
+
+        {/* Doctor Profile Header */}
+        <View className="bg-white px-5 py-6 border-b border-secondary-100">
+          <View className="flex-row">
+            {/* Doctor Image */}
+            <Image
+              source={doctor.profileImage ? { uri: doctor.profileImage } : images.avatar}
+              className="w-20 h-20 rounded-full border-2 border-primary-100"
+            />
+
+            {/* Doctor Info */}
+            <View className="flex-1 ml-4">
+              <Text className="text-xl font-rubik-bold text-text-primary">
+                {doctorName}
+              </Text>
+              <Text className="text-base font-rubik text-primary-600 mt-1">
+                {doctor.specialty.name}
+              </Text>
+
+              {/* Rating and Stats */}
+              <View className="flex-row items-center mt-2">
+                <View className="flex-row items-center mr-4">
+                  <Image source={icons.star} className="size-4 mr-1" tintColor="#f59e0b" />
+                  <Text className="text-sm font-rubik-semiBold text-secondary-700">
+                    {doctor.rating?.toFixed(1) || 'N/A'}
+                  </Text>
+                  <Text className="text-sm font-rubik text-secondary-500 ml-1">
+                    ({doctor.totalRatings || 0} รีวิว)
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center mt-2">
+                <View className="bg-primary-50 px-2 py-1 rounded mr-2">
+                  <Text className="text-xs font-rubik-semiBold text-primary-600">
+                    {doctor.experienceYears} ปี
+                  </Text>
+                </View>
+                <View className="bg-success-50 px-2 py-1 rounded">
+                  <Text className="text-xs font-rubik-semiBold text-success-600">
+                    {completedAppointments.length} คนไข้
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Consultation Fee */}
+          <View className="mt-4 p-3 bg-primary-50 rounded-xl">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-base font-rubik-semiBold text-text-primary">
+                ค่าตรวจ
+              </Text>
+              <Text className="text-xl font-rubik-bold text-primary-600">
+                ฿{doctor.consultationFee}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Tab Navigation */}
+        <View className="bg-white border-b border-secondary-100">
+          <View className="flex-row">
+            <TouchableOpacity
+              onPress={() => setSelectedTab('about')}
+              className={`flex-1 py-4 border-b-2 ${
+                selectedTab === 'about'
+                  ? 'border-primary-600'
+                  : 'border-transparent'
+              }`}
+            >
+              <Text
+                className={`text-center font-rubik-medium ${
+                  selectedTab === 'about'
+                    ? 'text-primary-600'
+                    : 'text-secondary-600'
+                }`}
+              >
+                เกี่ยวกับ
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setSelectedTab('availability')}
+              className={`flex-1 py-4 border-b-2 ${
+                selectedTab === 'availability'
+                  ? 'border-primary-600'
+                  : 'border-transparent'
+              }`}
+            >
+              <Text
+                className={`text-center font-rubik-medium ${
+                  selectedTab === 'availability'
+                    ? 'text-primary-600'
+                    : 'text-secondary-600'
+                }`}
+              >
+                ตารางเวลา
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setSelectedTab('reviews')}
+              className={`flex-1 py-4 border-b-2 ${
+                selectedTab === 'reviews'
+                  ? 'border-primary-600'
+                  : 'border-transparent'
+              }`}
+            >
+              <Text
+                className={`text-center font-rubik-medium ${
+                  selectedTab === 'reviews'
+                    ? 'text-primary-600'
+                    : 'text-secondary-600'
+                }`}
+              >
+                รีวิว
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Tab Content */}
+        <View className="bg-white">
+          {selectedTab === 'about' && renderAboutTab()}
+          {selectedTab === 'availability' && renderAvailabilityTab()}
+          {selectedTab === 'reviews' && renderReviewsTab()}
+        </View>
+
+        {/* Spacing for floating button */}
+        <View className="h-20" />
+      </ScrollView>
+
+      {/* Floating Book Appointment Button */}
+      <View className="absolute bottom-0 left-0 right-0 bg-white border-t border-secondary-200 p-5">
+        <Button
+          title="จองนัดหมาย"
+          onPress={handleBookAppointment}
+          variant="primary"
+          size="lg"
+        />
+      </View>
+    </SafeAreaView>
+  );
+}
