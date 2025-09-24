@@ -6,7 +6,7 @@ import { authService } from '@/services/auth';
 import { storageService } from '@/utils/storage';
 
 // Mock mode for development (set to true to bypass API calls)
-const MOCK_AUTH_MODE = true;
+const MOCK_AUTH_MODE = false;
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -78,6 +78,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const authResponse = await authService.login(credentials);
+      console.log('🔍 AuthContext - authResponse:', authResponse);
+      console.log('🔍 AuthContext - authResponse.token:', authResponse?.token);
 
       await Promise.all([
         storageService.setAuthToken(authResponse.token),

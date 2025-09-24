@@ -3,9 +3,7 @@ import { storageService } from '@/utils/storage';
 import { ApiError, ApiResponse } from '@/types';
 
 // Base API URL - ใช้ IP address สำหรับ development
-const BASE_URL = __DEV__
-  ? 'http://localhost:8082/api'  // Local development
-  : 'https://your-production-api.com/api'; // Production
+const BASE_URL = 'http://10.66.92.31:8082/api'; // Local development - use IP instead of localhost for mobile devices
 
 class ApiClient {
   private client: AxiosInstance;
@@ -37,11 +35,11 @@ class ApiClient {
         }
 
         // Log request in development
-        if (__DEV__) {
-          console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-          if (config.data) {
-            console.log('📦 Request Data:', config.data);
-          }
+        console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url || 'undefined'}`);
+        console.log('🚀 Base URL:', config.baseURL || 'undefined');
+        console.log('🚀 Full URL:', (config.baseURL || '') + (config.url || ''));
+        if (config.data) {
+          console.log('📦 Request Data:', config.data);
         }
 
         return config;
@@ -103,11 +101,12 @@ class ApiClient {
 
         // Handle API errors
         if (error.response) {
+          const responseData = error.response.data as any;
           const apiError: ApiError = {
-            message: error.response.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+            message: responseData?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
             status: error.response.status,
-            code: error.response.data?.code,
-            details: error.response.data
+            code: responseData?.code,
+            details: responseData
           };
           return Promise.reject(apiError);
         }

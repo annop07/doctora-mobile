@@ -25,7 +25,7 @@ export default function DoctorList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>('rating');
 

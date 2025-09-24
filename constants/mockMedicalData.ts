@@ -1,5 +1,7 @@
 import { Doctor, Appointment, AppointmentStatus, Specialty } from '@/types/medical';
 
+export type { Doctor, Appointment, AppointmentStatus, Specialty };
+
 export const mockSpecialties: Specialty[] = [
   {
     id: '1',

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tansta
 import { doctorService } from '../doctors';
 import { specialtyService } from '../specialties';
 import { appointmentService } from '../appointments';
+import { queryKeys, queryOptions } from '@/config/queryClient';
 import type {
   Doctor,
   Specialty,

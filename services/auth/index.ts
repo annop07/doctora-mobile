@@ -4,7 +4,10 @@ import { LoginRequest, RegisterRequest, AuthResponse, User, MessageResponse } fr
 class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-    return response.data;
+    console.log('🔍 Login API Response:', response);
+
+    // Backend returns auth object directly, apiClient.post returns response.data which is the auth object
+    return response;
   }
 
   async register(userData: RegisterRequest): Promise<MessageResponse> {

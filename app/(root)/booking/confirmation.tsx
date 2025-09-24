@@ -3,10 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button, Card, Input } from '@/components/ui';
+import { Button, Input } from '@/components/ui';
 import { Header, DoctorCard } from '@/components';
-import { mockDoctors, Doctor } from '@/constants/mockMedicalData';
-import icons from '@/constants/icons';
+import { mockDoctors } from '@/constants/mockMedicalData';
 
 export default function BookingConfirmation() {
   const { doctorId, date, time } = useLocalSearchParams<{

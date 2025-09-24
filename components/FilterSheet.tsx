@@ -122,7 +122,7 @@ export const FilterSheet = ({
                   <SpecialtyCard
                     specialty={specialty}
                     variant="chip"
-                    isSelected={selectedSpecialty === specialty.name}
+                    selected={selectedSpecialty === specialty.name}
                     onPress={() => onSpecialtySelect(specialty.name)}
                   />
                 </TouchableOpacity>

@@ -2,7 +2,7 @@
 import icons from '@/constants/icons'
 import images from '@/constants/images'
 import { router } from 'expo-router';
-import { View, Text, ScrollView, Image, TouchableOpacity, ImageSourcePropType } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, ImageSourcePropType, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useAuth } from '@/contexts/AuthContext';
 import { AppointmentCard } from '@/components/Cards';
@@ -151,12 +151,12 @@ const Profile = () => {
           <SettingItem
             icon={icons.wallet}
             title="ประวัติการชำระเงิน"
-            onPress={() => router.push('/payment-history')}
+            onPress={() => Alert.alert('ประวัติการชำระเงิน', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
           />
           <SettingItem
             icon={icons.person}
             title="แก้ไขข้อมูลส่วนตัว"
-            onPress={() => router.push('/edit-profile')}
+            onPress={() => Alert.alert('แก้ไขข้อมูลส่วนตัว', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
           />
         </View>
 
@@ -165,17 +165,17 @@ const Profile = () => {
           <SettingItem
             icon={icons.bell}
             title="การแจ้งเตือน"
-            onPress={() => router.push('/notifications')}
+            onPress={() => Alert.alert('การแจ้งเตือน', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
           />
           <SettingItem
             icon={icons.info}
             title="ช่วยเหลือและสนับสนุน"
-            onPress={() => router.push('/help')}
+            onPress={() => Alert.alert('ช่วยเหลือและสนับสนุน', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
           />
           <SettingItem
             icon={icons.info}
             title="เกี่ยวกับเรา"
-            onPress={() => router.push('/about')}
+            onPress={() => Alert.alert('เกี่ยวกับเรา', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
           />
         </View>
 

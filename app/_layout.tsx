@@ -1,24 +1,15 @@
 import { SplashScreen, Stack } from "expo-router";
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { createQueryClient, setupAppStateListener } from '@/config/queryClient';
+import { BackgroundSyncProvider } from '@/components/BackgroundSyncProvider';
 
 import "../global.css"
 import { useFonts } from "expo-font"
 import { useEffect } from "react";
 
-// Create a client for React Query
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 3,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-    },
-    mutations: {
-      retry: 1,
-    },
-  },
-});
+// Create enhanced query client
+const queryClient = createQueryClient();
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -36,6 +27,12 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
+  // Setup AppState listener for background sync
+  useEffect(() => {
+    const cleanup = setupAppStateListener(queryClient);
+    return cleanup;
+  }, []);
+
   if (!fontsLoaded) {
     return null;
   }
@@ -43,7 +40,9 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <BackgroundSyncProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </BackgroundSyncProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

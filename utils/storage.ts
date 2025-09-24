@@ -117,7 +117,8 @@ class StorageService {
   // Get all stored keys (for debugging)
   async getAllKeys(): Promise<string[]> {
     try {
-      return await AsyncStorage.getAllKeys();
+      const keys = await AsyncStorage.getAllKeys();
+      return [...keys];
     } catch (error) {
       console.error('Error getting all keys:', error);
       return [];

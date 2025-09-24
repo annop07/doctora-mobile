@@ -36,7 +36,7 @@ class DoctorService {
     if (params.minFee) queryParams.append('minFee', params.minFee.toString());
     if (params.maxFee) queryParams.append('maxFee', params.maxFee.toString());
 
-    const url = `/api/doctors/me${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/doctors/me${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await apiClient.get<DoctorsResponse>(url);
     return response.data;
   }
@@ -46,7 +46,7 @@ class DoctorService {
    * GET /api/doctors/me/{id}
    */
   async getDoctorById(id: string | number): Promise<Doctor> {
-    const response = await apiClient.get<Doctor>(`/api/doctors/me/${id}`);
+    const response = await apiClient.get<Doctor>(`/doctors/me/${id}`);
     return response.data;
   }
 
@@ -55,7 +55,7 @@ class DoctorService {
    * GET /api/doctors/me/search?name={name}
    */
   async searchDoctorsByName(name: string): Promise<Doctor[]> {
-    const response = await apiClient.get<{doctors: Doctor[]}>(`/api/doctors/me/search?name=${encodeURIComponent(name)}`);
+    const response = await apiClient.get<{doctors: Doctor[]}>(`/doctors/me/search?name=${encodeURIComponent(name)}`);
     return response.data.doctors;
   }
 
