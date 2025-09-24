@@ -1,47 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { DoctorCard } from '@/components/Cards';
 import { SpecialtyCard } from '@/components/SpecialtyCard';
-import { mockDoctors, getSpecialtyWithDoctorCount, getDoctorsBySpecialty } from '@/constants/mockMedicalData';
-import { Doctor } from '@/types/medical';
+import { useDoctors, useSpecialtiesWithCount } from '@/services/medical/hooks';
+import { DoctorSearchFilters } from '@/types/medical';
 import icons from '@/constants/icons';
 
 export default function Explore() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
-  const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
 
-  const specialtiesWithCount = getSpecialtyWithDoctorCount();
+  // Create search filters for API
+  const searchFilters: DoctorSearchFilters = useMemo(() => ({
+    query: searchQuery || undefined,
+    specialtyId: selectedSpecialty || undefined,
+    sortBy: 'name',
+    sortOrder: 'asc'
+  }), [searchQuery, selectedSpecialty]);
+
+  // Get data from API
+  const { data: doctorsResponse, isLoading: loadingDoctors } = useDoctors(searchFilters);
+  const { data: specialtiesWithCount = [], isLoading: loadingSpecialties } = useSpecialtiesWithCount();
+
+  const doctors = doctorsResponse?.doctors || [];
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    filterDoctors(query, selectedSpecialty);
   };
 
   const handleSpecialtySelect = (specialtyId: string | null) => {
     setSelectedSpecialty(specialtyId);
-    filterDoctors(searchQuery, specialtyId);
-  };
-
-  const filterDoctors = (query: string, specialtyId: string | null) => {
-    let filteredDoctors = mockDoctors;
-
-    // Filter by specialty
-    if (specialtyId) {
-      filteredDoctors = getDoctorsBySpecialty(specialtyId);
-    }
-
-    // Filter by search query
-    if (query) {
-      filteredDoctors = filteredDoctors.filter(doctor =>
-        `${doctor.user.firstName} ${doctor.user.lastName}`.toLowerCase().includes(query.toLowerCase()) ||
-        doctor.specialty.name.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    setDoctors(filteredDoctors);
   };
 
   const handleDoctorPress = (doctorId: string) => {
@@ -51,8 +41,10 @@ export default function Explore() {
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedSpecialty(null);
-    setDoctors(mockDoctors);
   };
+
+  // Calculate total doctors for "All" option
+  const totalDoctors = specialtiesWithCount.reduce((sum, specialty) => sum + specialty.doctorCount, 0);
 
   return (
     <SafeAreaView className="bg-background-secondary h-full">
@@ -110,7 +102,7 @@ export default function Explore() {
                   selectedSpecialty === null ? 'text-white' : 'text-text-primary'
                 }`}
               >
-                ทั้งหมด ({mockDoctors.length})
+                {loadingSpecialties ? 'กำลังโหลด...' : `ทั้งหมด (${totalDoctors})`}
               </Text>
             </TouchableOpacity>
 
@@ -146,7 +138,16 @@ export default function Explore() {
 
         {/* Results */}
         <View className="px-5 py-2">
-          {doctors.length > 0 ? (
+          {loadingDoctors ? (
+            <View className="items-center py-12">
+              <Text className="text-lg font-rubik-semiBold text-text-primary mb-2">
+                กำลังค้นหาแพทย์...
+              </Text>
+              <Text className="text-base font-rubik text-secondary-600 text-center">
+                โปรดรอสักครู่
+              </Text>
+            </View>
+          ) : doctors.length > 0 ? (
             doctors.map((doctor) => (
               <DoctorCard
                 key={doctor.id}

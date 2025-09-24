@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AppointmentCard } from '@/components/Cards';
-import { getAppointmentsByPatient } from '@/constants/mockMedicalData';
+import { useMyAppointments } from '@/services/medical/hooks';
 import { AppointmentStatus } from '@/types/medical';
 
 type AppointmentFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
@@ -11,43 +11,37 @@ type AppointmentFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
 export default function Appointments() {
   const [selectedFilter, setSelectedFilter] = useState<AppointmentFilter>('all');
 
-  // Get user's appointments (using mock patient ID)
-  const allAppointments = getAppointmentsByPatient('pat-001');
+  // Get all appointments from API
+  const { data: allAppointments = [], isLoading } = useMyAppointments();
 
-  // Filter appointments based on selected filter
-  const getFilteredAppointments = () => {
-    switch (selectedFilter) {
-      case 'upcoming':
-        return allAppointments.filter(apt =>
-          apt.status === AppointmentStatus.CONFIRMED || apt.status === AppointmentStatus.PENDING
-        );
-      case 'completed':
-        return allAppointments.filter(apt =>
-          apt.status === AppointmentStatus.COMPLETED
-        );
-      case 'cancelled':
-        return allAppointments.filter(apt =>
-          apt.status === AppointmentStatus.CANCELLED || apt.status === AppointmentStatus.REJECTED
-        );
-      default:
-        return allAppointments;
-    }
-  };
+  // Filter and count appointments based on status
+  const appointmentsByStatus = useMemo(() => {
+    const upcoming = allAppointments.filter(apt =>
+      apt.status === AppointmentStatus.CONFIRMED || apt.status === AppointmentStatus.PENDING
+    );
+    const completed = allAppointments.filter(apt =>
+      apt.status === AppointmentStatus.COMPLETED
+    );
+    const cancelled = allAppointments.filter(apt =>
+      apt.status === AppointmentStatus.CANCELLED || apt.status === AppointmentStatus.REJECTED
+    );
 
-  const filteredAppointments = getFilteredAppointments();
+    return {
+      all: allAppointments,
+      upcoming,
+      completed,
+      cancelled
+    };
+  }, [allAppointments]);
+
+  const filteredAppointments = appointmentsByStatus[selectedFilter];
 
   // Count for each filter
   const counts = {
-    all: allAppointments.length,
-    upcoming: allAppointments.filter(apt =>
-      apt.status === AppointmentStatus.CONFIRMED || apt.status === AppointmentStatus.PENDING
-    ).length,
-    completed: allAppointments.filter(apt =>
-      apt.status === AppointmentStatus.COMPLETED
-    ).length,
-    cancelled: allAppointments.filter(apt =>
-      apt.status === AppointmentStatus.CANCELLED || apt.status === AppointmentStatus.REJECTED
-    ).length
+    all: appointmentsByStatus.all.length,
+    upcoming: appointmentsByStatus.upcoming.length,
+    completed: appointmentsByStatus.completed.length,
+    cancelled: appointmentsByStatus.cancelled.length
   };
 
   const handleAppointmentPress = (appointmentId: string) => {
@@ -109,7 +103,18 @@ export default function Appointments() {
 
         {/* Appointments List */}
         <View className="px-5 py-2">
-          {filteredAppointments.length > 0 ? (
+          {isLoading ? (
+            <View className="items-center py-12">
+              <View className="bg-white rounded-xl p-8 w-full">
+                <Text className="text-lg font-rubik-semiBold text-text-primary text-center mb-2">
+                  กำลังโหลดนัดหมาย...
+                </Text>
+                <Text className="text-base font-rubik text-secondary-600 text-center">
+                  โปรดรอสักครู่
+                </Text>
+              </View>
+            </View>
+          ) : filteredAppointments.length > 0 ? (
             filteredAppointments.map((appointment) => (
               <AppointmentCard
                 key={appointment.id}

@@ -6,18 +6,16 @@ import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui';
 import { DoctorCard, AppointmentCard } from '@/components/Cards';
-import { getFeaturedDoctors, getAppointmentsByPatient } from '@/constants/mockMedicalData';
+import { useFeaturedDoctors, useUpcomingAppointments } from '@/services/medical/hooks';
 import icons from "@/constants/icons";
 import images from "@/constants/images";
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // Get featured doctors and user's appointments
-  const featuredDoctors = getFeaturedDoctors();
-  const upcomingAppointments = getAppointmentsByPatient('pat-001')
-    .filter(apt => apt.status === 'CONFIRMED' || apt.status === 'PENDING')
-    .slice(0, 2);
+  // Get featured doctors and user's appointments using React Query
+  const { data: featuredDoctors = [], isLoading: loadingDoctors } = useFeaturedDoctors(3);
+  const { data: upcomingAppointments = [], isLoading: loadingAppointments } = useUpcomingAppointments(2);
 
   const handleBookAppointment = () => {
     router.push('/book-appointment');
@@ -118,7 +116,15 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          {upcomingAppointments.length > 0 ? (
+          {loadingAppointments ? (
+            <Card variant="outlined" padding="lg">
+              <View className="items-center">
+                <Text className="text-base font-rubik text-secondary-600">
+                  กำลังโหลดนัดหมาย...
+                </Text>
+              </View>
+            </Card>
+          ) : upcomingAppointments.length > 0 ? (
             upcomingAppointments.map((appointment) => (
               <AppointmentCard
                 key={appointment.id}
@@ -158,20 +164,32 @@ export default function Dashboard() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
-          >
-            {featuredDoctors.map((doctor) => (
-              <DoctorCard
-                key={doctor.id}
-                doctor={doctor}
-                variant="featured"
-                onPress={() => handleDoctorPress(doctor.id)}
-              />
-            ))}
-          </ScrollView>
+          {loadingDoctors ? (
+            <View className="px-5">
+              <Card variant="outlined" padding="lg">
+                <View className="items-center">
+                  <Text className="text-base font-rubik text-secondary-600">
+                    กำลังโหลดแพทย์...
+                  </Text>
+                </View>
+              </Card>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
+              {featuredDoctors.map((doctor) => (
+                <DoctorCard
+                  key={doctor.id}
+                  doctor={doctor}
+                  variant="featured"
+                  onPress={() => handleDoctorPress(doctor.id)}
+                />
+              ))}
+            </ScrollView>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

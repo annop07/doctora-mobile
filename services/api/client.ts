@@ -103,11 +103,12 @@ class ApiClient {
 
         // Handle API errors
         if (error.response) {
+          const responseData = error.response.data as any;
           const apiError: ApiError = {
-            message: error.response.data?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
+            message: responseData?.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง',
             status: error.response.status,
-            code: error.response.data?.code,
-            details: error.response.data
+            code: responseData?.code,
+            details: responseData
           };
           return Promise.reject(apiError);
         }
