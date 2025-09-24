@@ -32,6 +32,9 @@ import wifi from "@/assets/icons/wifi.png";
 import location from "@/assets/icons/location.png";
 import edit from "@/assets/icons/edit.png";
 
+// For missing icons, we'll use existing ones as placeholders
+const close = search; // Placeholder
+
 export default {
   google,
   home,
@@ -66,4 +69,5 @@ export default {
   wifi,
   location,
   edit,
+  close,
 };

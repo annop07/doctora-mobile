@@ -48,20 +48,32 @@ const TabsLayout = () => {
                     title: 'Explore',
                     headerShown: false,
                     tabBarIcon: ({focused}) =>(
-                       <TabIcon icon={icons.search} 
-                                focused={focused} 
+                       <TabIcon icon={icons.search}
+                                focused={focused}
                                 title="Explore"/>
                     )
                 }}
-            /> 
+            />
+            <Tabs.Screen
+                name='appointments'
+                options={{
+                    title: 'Appointments',
+                    headerShown: false,
+                    tabBarIcon: ({focused}) =>(
+                       <TabIcon icon={icons.calendar}
+                                focused={focused}
+                                title="Appointments"/>
+                    )
+                }}
+            />
             <Tabs.Screen
                 name='profile'
                 options={{
                     title: 'Profile',
                     headerShown: false,
                     tabBarIcon: ({focused}) =>(
-                       <TabIcon icon={icons.person} 
-                                focused={focused} 
+                       <TabIcon icon={icons.person}
+                                focused={focused}
                                 title="Profile"/>
                     )
                 }}
