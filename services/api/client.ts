@@ -2,8 +2,8 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { storageService } from '@/utils/storage';
 import { ApiError, ApiResponse } from '@/types';
 
-// Base API URL - ใช้ IP address สำหรับ development
-const BASE_URL = 'http://10.66.92.116:8082/api'; // Local development - use IP instead of localhost for mobile devices
+// Base API URL - ใช้ localhost สำหรับ development
+const BASE_URL = 'http://localhost:8082/api'; // Local development
 
 class ApiClient {
   private client: AxiosInstance;

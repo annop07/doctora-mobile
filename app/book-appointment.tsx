@@ -40,7 +40,10 @@ export default function BookAppointment() {
   // Find selected doctor when doctorId is provided
   const initialDoctor = useMemo(() => {
     if (doctorId && allDoctorsResponse?.doctors) {
-      return allDoctorsResponse.doctors.find(d => d.id === doctorId) || null;
+      // Try both string and number comparison
+      return allDoctorsResponse.doctors.find(d =>
+        d.id === doctorId || d.id === parseInt(doctorId) || d.id.toString() === doctorId
+      ) || null;
     }
     return null;
   }, [doctorId, allDoctorsResponse?.doctors]);
@@ -208,6 +211,7 @@ export default function BookAppointment() {
           onDateSelect={setSelectedDate}
           selectedTime={selectedTime}
           onTimeSelect={setSelectedTime}
+          doctorId={selectedDoctor?.id}
         />
       </View>
 

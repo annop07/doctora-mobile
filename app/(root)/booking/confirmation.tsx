@@ -25,7 +25,10 @@ export default function BookingConfirmation() {
   // Find doctor by ID
   const doctor = useMemo(() => {
     if (doctorId && doctorsResponse?.doctors) {
-      return doctorsResponse.doctors.find(d => d.id === doctorId) || null;
+      // Try both string and number comparison
+      return doctorsResponse.doctors.find(d =>
+        d.id === doctorId || d.id === parseInt(doctorId) || d.id.toString() === doctorId
+      ) || null;
     }
     return null;
   }, [doctorId, doctorsResponse?.doctors]);
