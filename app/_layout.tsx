@@ -2,7 +2,6 @@ import { SplashScreen, Stack } from "expo-router";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { createQueryClient, setupAppStateListener } from '@/config/queryClient';
-import { BackgroundSyncProvider } from '@/components/BackgroundSyncProvider';
 
 import "../global.css"
 import { useFonts } from "expo-font"
@@ -40,9 +39,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BackgroundSyncProvider>
-          <Stack screenOptions={{ headerShown: false }} />
-        </BackgroundSyncProvider>
+        <Stack screenOptions={{ headerShown: false }} />
       </AuthProvider>
     </QueryClientProvider>
   );

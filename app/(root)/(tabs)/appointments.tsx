@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AppointmentCard } from '@/components/Cards';
-import { getAppointmentsByPatient } from '@/constants/mockMedicalData';
+import { useMyAppointments, useAppointmentFilters } from '@/services/appointments/hooks';
+import { ErrorState } from '@/components/ErrorStates';
 import { AppointmentStatus } from '@/types/medical';
 
 type AppointmentFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
@@ -11,44 +12,39 @@ type AppointmentFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
 export default function Appointments() {
   const [selectedFilter, setSelectedFilter] = useState<AppointmentFilter>('all');
 
-  // Get user's appointments (using mock patient ID)
-  const allAppointments = getAppointmentsByPatient('pat-001');
+  // API Queries
+  const { data: allAppointments, isLoading, error, refetch } = useMyAppointments();
+  const filters = useAppointmentFilters();
 
   // Filter appointments based on selected filter
-  const getFilteredAppointments = () => {
+  const filteredAppointments = useMemo(() => {
+    if (!allAppointments) return [];
+
     switch (selectedFilter) {
       case 'upcoming':
-        return allAppointments.filter(apt =>
-          apt.status === AppointmentStatus.CONFIRMED || apt.status === AppointmentStatus.PENDING
-        );
+        return filters.getUpcoming(allAppointments);
       case 'completed':
-        return allAppointments.filter(apt =>
-          apt.status === AppointmentStatus.COMPLETED
-        );
+        return filters.getCompleted(allAppointments);
       case 'cancelled':
-        return allAppointments.filter(apt =>
-          apt.status === AppointmentStatus.CANCELLED || apt.status === AppointmentStatus.REJECTED
-        );
+        return filters.getCancelled(allAppointments);
       default:
         return allAppointments;
     }
-  };
-
-  const filteredAppointments = getFilteredAppointments();
+  }, [allAppointments, selectedFilter, filters]);
 
   // Count for each filter
-  const counts = {
-    all: allAppointments.length,
-    upcoming: allAppointments.filter(apt =>
-      apt.status === AppointmentStatus.CONFIRMED || apt.status === AppointmentStatus.PENDING
-    ).length,
-    completed: allAppointments.filter(apt =>
-      apt.status === AppointmentStatus.COMPLETED
-    ).length,
-    cancelled: allAppointments.filter(apt =>
-      apt.status === AppointmentStatus.CANCELLED || apt.status === AppointmentStatus.REJECTED
-    ).length
-  };
+  const counts = useMemo(() => {
+    if (!allAppointments) {
+      return { all: 0, upcoming: 0, completed: 0, cancelled: 0 };
+    }
+
+    return {
+      all: allAppointments.length,
+      upcoming: filters.getUpcoming(allAppointments).length,
+      completed: filters.getCompleted(allAppointments).length,
+      cancelled: filters.getCancelled(allAppointments).length
+    };
+  }, [allAppointments, filters]);
 
   const handleAppointmentPress = (appointmentId: string) => {
     router.push(`/(root)/appointments/${appointmentId}`);
@@ -64,6 +60,50 @@ export default function Appointments() {
     { key: 'completed' as AppointmentFilter, title: 'เสร็จสิ้น', count: counts.completed },
     { key: 'cancelled' as AppointmentFilter, title: 'ยกเลิก', count: counts.cancelled }
   ];
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView className="bg-background-secondary h-full">
+        <View className="bg-white px-5 py-4 border-b border-secondary-200">
+          <Text className="text-2xl font-rubik-bold text-text-primary mb-2">
+            การนัดหมายของฉัน
+          </Text>
+          <Text className="text-base font-rubik text-secondary-600">
+            ดูและจัดการนัดหมายทั้งหมดของคุณ
+          </Text>
+        </View>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#0066CC" />
+          <Text className="text-base font-rubik text-secondary-600 mt-4">
+            กำลังโหลดการนัดหมาย...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView className="bg-background-secondary h-full">
+        <View className="bg-white px-5 py-4 border-b border-secondary-200">
+          <Text className="text-2xl font-rubik-bold text-text-primary mb-2">
+            การนัดหมายของฉัน
+          </Text>
+          <Text className="text-base font-rubik text-secondary-600">
+            ดูและจัดการนัดหมายทั้งหมดของคุณ
+          </Text>
+        </View>
+        <ErrorState
+          error={error}
+          title="เกิดข้อผิดพลาด"
+          message="ไม่สามารถโหลดข้อมูลการนัดหมายได้"
+          onRetry={refetch}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="bg-background-secondary h-full">

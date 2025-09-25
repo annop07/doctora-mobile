@@ -1,25 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDoctors } from '@/services/medical/hooks';
 import { Button, Input } from '@/components/ui';
 import { Header, DoctorCard } from '@/components';
-import { mockDoctors } from '@/constants/mockMedicalData';
 
 export default function BookingConfirmation() {
-  const { doctorId, date, time } = useLocalSearchParams<{
+  const { appointmentId, doctorId, date, time, message } = useLocalSearchParams<{
+    appointmentId?: string;
     doctorId: string;
     date: string;
     time: string;
+    message?: string;
   }>();
 
   const { user } = useAuth();
   const [notes, setNotes] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+
+  // Get doctors data
+  const { data: doctorsResponse } = useDoctors({ limit: 100 });
 
   // Find doctor by ID
-  const doctor = doctorId ? mockDoctors.find(d => d.id === doctorId) : null;
+  const doctor = useMemo(() => {
+    if (doctorId && doctorsResponse?.doctors) {
+      return doctorsResponse.doctors.find(d => d.id === doctorId) || null;
+    }
+    return null;
+  }, [doctorId, doctorsResponse?.doctors]);
+
+  // Auto-redirect if this is a successful booking (has appointmentId)
+  useEffect(() => {
+    if (appointmentId && message) {
+      const timer = setTimeout(() => {
+        Alert.alert(
+          '🎉 จองนัดหมายสำเร็จ!',
+          `${message}\n\nหมายเลขการจอง: ${appointmentId}`,
+          [
+            {
+              text: 'ดูการนัดหมาย',
+              onPress: () => router.replace('/(root)/(tabs)/appointments')
+            },
+            {
+              text: 'กลับหน้าแรก',
+              onPress: () => router.replace('/(root)/(tabs)'),
+              style: 'cancel'
+            }
+          ]
+        );
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [appointmentId, message]);
 
   if (!doctor || !date || !time) {
     return (
@@ -43,60 +77,48 @@ export default function BookingConfirmation() {
     );
   }
 
-  const doctorName = `${doctor.user.firstName} ${doctor.user.lastName}`;
+  const doctorName = doctor ? doctor.name : 'ไม่ระบุ';
   const appointmentDate = new Date(date);
   const patientName = user ? `${user.firstName} ${user.lastName}` : 'ไม่ระบุ';
 
-  const handleConfirmBooking = async () => {
-    if (!user) {
-      Alert.alert(
-        'กรุณาเข้าสู่ระบบ',
-        'คุณต้องเข้าสู่ระบบก่อนจองนัดหมาย',
-        [
-          { text: 'ยกเลิก', style: 'cancel' },
-          { text: 'เข้าสู่ระบบ', onPress: () => router.push('/sign-in') }
-        ]
-      );
-      return;
-    }
+  // If this is a successful booking, don't show the form
+  if (appointmentId && message) {
+    return (
+      <SafeAreaView className="bg-background-secondary h-full">
+        <View className="flex-1 items-center justify-center px-5">
+          <View className="bg-white rounded-xl p-8 w-full items-center">
+            <View className="w-20 h-20 bg-success-100 rounded-full items-center justify-center mb-6">
+              <Text className="text-4xl">🎉</Text>
+            </View>
+            <Text className="text-2xl font-rubik-bold text-success-600 text-center mb-4">
+              จองนัดหมายสำเร็จ!
+            </Text>
+            <Text className="text-base font-rubik text-text-primary text-center mb-2">
+              {message}
+            </Text>
+            <Text className="text-sm font-rubik text-secondary-600 text-center mb-8">
+              หมายเลขการจอง: {appointmentId}
+            </Text>
 
-    setIsLoading(true);
-
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Show success message
-      Alert.alert(
-        '🎉 จองนัดหมายสำเร็จ!',
-        `การนัดหมายของคุณได้รับการยืนยันแล้ว\n\nหมายเลขการจอง: #APT${Date.now().toString().slice(-6)}\n\nแพทย์: ${doctorName}\nวันที่: ${appointmentDate.toLocaleDateString('th-TH', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        })}\nเวลา: ${time}`,
-        [
-          {
-            text: 'ดูการนัดหมาย',
-            onPress: () => router.replace('/(root)/(tabs)/appointments')
-          },
-          {
-            text: 'กลับหน้าแรก',
-            onPress: () => router.replace('/(root)/(tabs)'),
-            style: 'cancel'
-          }
-        ]
-      );
-    } catch (error) {
-      Alert.alert(
-        'เกิดข้อผิดพลาด',
-        'ไม่สามารถจองนัดหมายได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง',
-        [{ text: 'ตกลง' }]
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+            <View className="w-full space-y-3">
+              <Button
+                title="ดูการนัดหมาย"
+                onPress={() => router.replace('/(root)/(tabs)/appointments')}
+                variant="primary"
+                size="lg"
+              />
+              <Button
+                title="กลับหน้าแรก"
+                onPress={() => router.replace('/(root)/(tabs)')}
+                variant="outline"
+                size="lg"
+              />
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const handleEditAppointment = () => {
     router.back();
@@ -219,19 +241,19 @@ export default function BookingConfirmation() {
             </View>
           </View>
 
-          {/* Additional Notes */}
-          <View className="mb-6">
-            <Text className="text-base font-rubik-semiBold text-text-primary mb-3">
-              หมายเหตุเพิ่มเติม (ไม่บังคับ)
-            </Text>
-            <Input
-              placeholder="ระบุอาการหรือข้อมูลเพิ่มเติมที่ต้องการให้แพทย์ทราบ..."
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              style={{ height: 80, textAlignVertical: 'top' }}
-            />
-          </View>
+          {/* Show notes if this is from API (read-only) */}
+          {notes && (
+            <View className="mb-6">
+              <Text className="text-base font-rubik-semiBold text-text-primary mb-3">
+                หมายเหตุ
+              </Text>
+              <View className="bg-secondary-50 p-4 rounded-xl">
+                <Text className="text-sm font-rubik text-text-primary">
+                  {notes}
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* Terms & Conditions */}
           <View className="bg-warning-50 p-4 rounded-xl border border-warning-200 mb-6">
@@ -281,42 +303,34 @@ export default function BookingConfirmation() {
         </View>
       </ScrollView>
 
-      {/* Fixed Bottom Actions */}
-      <View className="bg-white border-t border-secondary-200 p-5">
-        <View className="space-y-3">
-          <Button
-            title={isLoading ? "กำลังจองนัดหมาย..." : "ยืนยันการจองนัดหมาย"}
-            onPress={handleConfirmBooking}
-            variant="primary"
-            size="lg"
-            loading={isLoading}
-            disabled={isLoading}
-          />
+      {/* Fixed Bottom Actions - Only show for non-API bookings */}
+      {!appointmentId && (
+        <View className="bg-white border-t border-secondary-200 p-5">
+          <View className="space-y-3">
+            <Button
+              title="กลับไป"
+              onPress={() => router.back()}
+              variant="primary"
+              size="lg"
+            />
+          </View>
 
-          <Button
-            title="ยกเลิก"
-            onPress={() => router.back()}
-            variant="outline"
-            size="lg"
-            disabled={isLoading}
-          />
-        </View>
-
-        {/* Price Summary */}
-        <View className="mt-4 pt-4 border-t border-secondary-100">
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-rubik text-secondary-600">
-              ยอดรวมทั้งสิ้น
-            </Text>
-            <Text className="text-2xl font-rubik-bold text-primary-600">
-              ฿{doctor.consultationFee}
+          {/* Price Summary */}
+          <View className="mt-4 pt-4 border-t border-secondary-100">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-base font-rubik text-secondary-600">
+                ยอดรวมทั้งสิ้น
+              </Text>
+              <Text className="text-2xl font-rubik-bold text-primary-600">
+                ฿{doctor?.consultationFee || 0}
+              </Text>
+            </View>
+            <Text className="text-xs font-rubik text-secondary-500 text-right mt-1">
+              ชำระได้ที่โรงพยาบาลหรือผ่านแอป
             </Text>
           </View>
-          <Text className="text-xs font-rubik text-secondary-500 text-right mt-1">
-            ชำระได้ที่โรงพยาบาลหรือผ่านแอป
-          </Text>
         </View>
-      </View>
+      )}
     </SafeAreaView>
   );
 }
