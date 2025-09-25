@@ -38,7 +38,7 @@ class DoctorService {
 
     const url = `/doctors/me${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await apiClient.get<DoctorsResponse>(url);
-    return response.data;
+    return response;
   }
 
   /**
@@ -47,7 +47,7 @@ class DoctorService {
    */
   async getDoctorById(id: string | number): Promise<Doctor> {
     const response = await apiClient.get<Doctor>(`/doctors/me/${id}`);
-    return response.data;
+    return response;
   }
 
   /**
@@ -56,7 +56,7 @@ class DoctorService {
    */
   async searchDoctorsByName(name: string): Promise<Doctor[]> {
     const response = await apiClient.get<{doctors: Doctor[]}>(`/doctors/me/search?name=${encodeURIComponent(name)}`);
-    return response.data.doctors;
+    return response.doctors;
   }
 
   /**
@@ -127,7 +127,7 @@ class DoctorService {
       currentPage: number;
       totalItems: number;
       totalPages: number;
-    }>(`/api/doctors/me/specialty/${specialtyId}?page=${page}&size=${size}`);
+    }>(`/doctors/me/specialty/${specialtyId}?page=${page}&size=${size}`);
 
     return response.data;
   }
@@ -137,7 +137,7 @@ class DoctorService {
    * GET /api/doctors/me/stats
    */
   async getDoctorStats(): Promise<DoctorStats> {
-    const response = await apiClient.get<DoctorStats>('/api/doctors/me/stats');
+    const response = await apiClient.get<DoctorStats>('/doctors/me/stats');
     return response.data;
   }
 

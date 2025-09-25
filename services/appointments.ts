@@ -68,7 +68,7 @@ class AppointmentService {
     }
 
     const response = await apiClient.get<AppointmentsResponse>(url);
-    return response.data.appointments;
+    return response.appointments;
   }
 
   /**

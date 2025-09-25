@@ -7,14 +7,13 @@ export interface Specialty {
 
 export interface Doctor {
   id: string;
-  user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    phone?: string;
-  };
+  name: string; // Full name from backend
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
   specialty: Specialty;
+  specialtyName?: string; // Fallback field
   licenseNumber: string;
   bio?: string;
   experienceYears: number;
@@ -25,7 +24,7 @@ export interface Doctor {
   totalRatings?: number;
   profileImage?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface Availability {

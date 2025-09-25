@@ -16,7 +16,7 @@ interface AppointmentCardProps {
 }
 
 export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProps) => {
-    const doctorName = `${doctor.user.firstName} ${doctor.user.lastName}`;
+    const doctorName = doctor.name || `${doctor.firstName} ${doctor.lastName}`;
     const rating = doctor.rating || 0;
     const reviewCount = doctor.totalRatings || 0;
 
@@ -119,7 +119,7 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
 };
 
 export const AppointmentCard = ({ appointment, onPress, showActions = false }: AppointmentCardProps) => {
-    const doctorName = `${appointment.doctor.user.firstName} ${appointment.doctor.user.lastName}`;
+    const doctorName = appointment.doctor.name || `${appointment.doctor.firstName} ${appointment.doctor.lastName}`;
     const appointmentDate = new Date(appointment.appointmentDateTime);
     const dateStr = appointmentDate.toLocaleDateString('th-TH', {
         day: 'numeric',

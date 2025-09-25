@@ -23,8 +23,8 @@ class SpecialtyService {
    * GET /api/specialties
    */
   async getSpecialties(): Promise<Specialty[]> {
-    const response = await apiClient.get<SpecialtiesResponse>('/api/specialties');
-    return response.data.specialties;
+    const response = await apiClient.get<SpecialtiesResponse>('/specialties');
+    return response.specialties;
   }
 
   /**
@@ -32,8 +32,8 @@ class SpecialtyService {
    * GET /api/specialties/{id}
    */
   async getSpecialtyById(id: string | number): Promise<SpecialtyDetailResponse> {
-    const response = await apiClient.get<SpecialtyDetailResponse>(`/api/specialties/${id}`);
-    return response.data;
+    const response = await apiClient.get<SpecialtyDetailResponse>(`/specialties/${id}`);
+    return response;
   }
 
   /**
@@ -41,8 +41,8 @@ class SpecialtyService {
    * GET /api/specialties/with-count
    */
   async getSpecialtiesWithDoctorCount(): Promise<SpecialtyWithDoctorCount[]> {
-    const response = await apiClient.get<SpecialtiesWithCountResponse>('/api/specialties/with-count');
-    return response.data.specialties;
+    const response = await apiClient.get<SpecialtiesWithCountResponse>('/specialties/with-count');
+    return response.specialties;
   }
 
   /**
@@ -51,9 +51,9 @@ class SpecialtyService {
    */
   async searchSpecialtiesByName(name: string): Promise<Specialty[]> {
     const response = await apiClient.get<SpecialtiesResponse>(
-      `/api/specialties/search?name=${encodeURIComponent(name)}`
+      `/specialties/search?name=${encodeURIComponent(name)}`
     );
-    return response.data.specialties;
+    return response.specialties;
   }
 
   /**

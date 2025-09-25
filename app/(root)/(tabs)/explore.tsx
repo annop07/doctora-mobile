@@ -1,47 +1,57 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, ScrollView, TextInput, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { DoctorCard } from '@/components/Cards';
 import { SpecialtyCard } from '@/components/SpecialtyCard';
-import { mockDoctors, getSpecialtyWithDoctorCount, getDoctorsBySpecialty } from '@/constants/mockMedicalData';
-import { Doctor } from '@/types/medical';
+import { LoadingSpinner, ErrorStates } from '@/components/ui';
+import { useDoctors, useSpecialtiesWithCount, useDoctorsBySpecialty, useDoctorSearch } from '@/services/medical/hooks';
+import { Doctor, DoctorSearchFilters } from '@/types';
 import icons from '@/constants/icons';
+import { useDebounce } from 'use-debounce';
 
 export default function Explore() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
-  const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
 
-  const specialtiesWithCount = getSpecialtyWithDoctorCount();
+  // Debounce search query to avoid excessive API calls
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+
+  // API Queries
+  const { data: specialtiesWithCount, isLoading: specialtiesLoading } = useSpecialtiesWithCount();
+
+  // Build search filters
+  const searchFilters = useMemo<DoctorSearchFilters>(() => {
+    const filters: DoctorSearchFilters = {};
+
+    if (debouncedSearchQuery.trim()) {
+      filters.query = debouncedSearchQuery.trim();
+    }
+
+    if (selectedSpecialty) {
+      filters.specialtyId = selectedSpecialty;
+    }
+
+    return filters;
+  }, [debouncedSearchQuery, selectedSpecialty]);
+
+  // Get doctors based on current filters
+  const {
+    data: doctorsResponse,
+    isLoading: doctorsLoading,
+    error: doctorsError,
+    refetch: refetchDoctors
+  } = useDoctors(searchFilters);
+
+  const doctors = doctorsResponse?.doctors || [];
+  const totalDoctors = doctorsResponse?.totalItems || 0;
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    filterDoctors(query, selectedSpecialty);
   };
 
   const handleSpecialtySelect = (specialtyId: string | null) => {
     setSelectedSpecialty(specialtyId);
-    filterDoctors(searchQuery, specialtyId);
-  };
-
-  const filterDoctors = (query: string, specialtyId: string | null) => {
-    let filteredDoctors = mockDoctors;
-
-    // Filter by specialty
-    if (specialtyId) {
-      filteredDoctors = getDoctorsBySpecialty(specialtyId);
-    }
-
-    // Filter by search query
-    if (query) {
-      filteredDoctors = filteredDoctors.filter(doctor =>
-        `${doctor.user.firstName} ${doctor.user.lastName}`.toLowerCase().includes(query.toLowerCase()) ||
-        doctor.specialty.name.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    setDoctors(filteredDoctors);
   };
 
   const handleDoctorPress = (doctorId: string) => {
@@ -51,8 +61,29 @@ export default function Explore() {
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedSpecialty(null);
-    setDoctors(mockDoctors);
   };
+
+  // Loading state
+  if (specialtiesLoading && !specialtiesWithCount) {
+    return (
+      <SafeAreaView className="bg-background-secondary h-full">
+        <LoadingSpinner message="กำลังโหลดข้อมูล..." />
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (doctorsError) {
+    return (
+      <SafeAreaView className="bg-background-secondary h-full">
+        <ErrorStates
+          title="เกิดข้อผิดพลาด"
+          message="ไม่สามารถโหลดข้อมูลแพทย์ได้"
+          onRetry={refetchDoctors}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="bg-background-secondary h-full">
@@ -110,12 +141,12 @@ export default function Explore() {
                   selectedSpecialty === null ? 'text-white' : 'text-text-primary'
                 }`}
               >
-                ทั้งหมด ({mockDoctors.length})
+                ทั้งหมด ({totalDoctors})
               </Text>
             </TouchableOpacity>
 
             {/* Specialty Options */}
-            {specialtiesWithCount.map((specialty) => (
+            {(specialtiesWithCount || []).map((specialty) => (
               <SpecialtyCard
                 key={specialty.id}
                 specialty={specialty}
@@ -146,7 +177,14 @@ export default function Explore() {
 
         {/* Results */}
         <View className="px-5 py-2">
-          {doctors.length > 0 ? (
+          {doctorsLoading ? (
+            <View className="items-center py-12">
+              <ActivityIndicator size="large" color="#0066CC" />
+              <Text className="text-base font-rubik text-secondary-600 mt-4">
+                กำลังค้นหาแพทย์...
+              </Text>
+            </View>
+          ) : doctors.length > 0 ? (
             doctors.map((doctor) => (
               <DoctorCard
                 key={doctor.id}

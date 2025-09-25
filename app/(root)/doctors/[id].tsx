@@ -3,9 +3,9 @@ import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button, Card } from '@/components/ui';
-import { mockDoctors, mockAppointments } from '@/constants/mockMedicalData';
-import { Availability } from '@/types/medical';
+import { Button, Card, LoadingSpinner, ErrorStates } from '@/components/ui';
+import { useDoctor } from '@/services/medical/hooks';
+import { Availability } from '@/types';
 import icons from '@/constants/icons';
 import images from '@/constants/images';
 
@@ -64,34 +64,42 @@ export default function DoctorDetail() {
   const { user } = useAuth();
   const [selectedTab, setSelectedTab] = useState<'about' | 'availability' | 'reviews'>('about');
 
-  // Find doctor by ID
-  const doctor = mockDoctors.find(d => d.id === id);
+  // Fetch doctor data from API
+  const {
+    data: doctor,
+    isLoading,
+    error,
+    refetch
+  } = useDoctor(id as string);
 
-  if (!doctor) {
+  // Loading state
+  if (isLoading) {
     return (
       <SafeAreaView className="bg-white h-full">
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-lg font-rubik-semiBold text-text-primary">
-            ไม่พบข้อมูลแพทย์
-          </Text>
-          <Button
-            title="กลับ"
-            onPress={() => router.back()}
-            variant="outline"
-            size="sm"
-            style={{ marginTop: 16 }}
-          />
-        </View>
+        <LoadingSpinner message="กำลังโหลดข้อมูลแพทย์..." />
       </SafeAreaView>
     );
   }
 
-  const doctorName = `${doctor.user.firstName} ${doctor.user.lastName}`;
+  // Error state
+  if (error || !doctor) {
+    return (
+      <SafeAreaView className="bg-white h-full">
+        <ErrorStates
+          title="ไม่พบข้อมูลแพทย์"
+          message="ไม่สามารถโหลดข้อมูลแพทย์ได้"
+          onRetry={refetch}
+          onBack={() => router.back()}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  const doctorName = doctor.name || `${doctor.firstName} ${doctor.lastName}`;
   const doctorAvailability = mockAvailability.filter(av => av.doctorId === doctor.id);
 
-  // Get doctor's appointments for statistics
-  const doctorAppointments = mockAppointments.filter(apt => apt.doctor.id === doctor.id);
-  const completedAppointments = doctorAppointments.filter(apt => apt.status === 'COMPLETED');
+  // Mock statistics for now (will be replaced with real API data later)
+  const completedAppointments = 25; // Mock data
 
   const handleBookAppointment = () => {
     if (!user) {
@@ -145,7 +153,7 @@ export default function DoctorDetail() {
           <View className="flex-row items-center">
             <View className="w-2 h-2 bg-primary-600 rounded-full mr-3" />
             <Text className="text-base font-rubik text-secondary-600">
-              ความเชี่ยวชาญ: {doctor.specialty.name}
+              ความเชี่ยวชาญ: {doctor.specialty?.name || 'ไม่ระบุแผนก'}
             </Text>
           </View>
           {doctor.roomNumber && (
@@ -168,14 +176,14 @@ export default function DoctorDetail() {
           <View className="flex-row items-center">
             <Image source={icons.person} className="size-4 mr-3" tintColor="#64748b" />
             <Text className="text-base font-rubik text-secondary-600">
-              {doctor.user.email}
+              {doctor.email}
             </Text>
           </View>
-          {doctor.user.phone && (
+          {doctor.phone && (
             <View className="flex-row items-center">
               <Image source={icons.phone} className="size-4 mr-3" tintColor="#64748b" />
               <Text className="text-base font-rubik text-secondary-600">
-                {doctor.user.phone}
+                {doctor.phone}
               </Text>
             </View>
           )}
@@ -269,7 +277,7 @@ export default function DoctorDetail() {
                 {doctorName}
               </Text>
               <Text className="text-base font-rubik text-primary-600 mt-1">
-                {doctor.specialty.name}
+                {doctor.specialty?.name || 'ไม่ระบุแผนก'}
               </Text>
 
               {/* Rating and Stats */}
@@ -293,7 +301,7 @@ export default function DoctorDetail() {
                 </View>
                 <View className="bg-success-50 px-2 py-1 rounded">
                   <Text className="text-xs font-rubik-semiBold text-success-600">
-                    {completedAppointments.length} คนไข้
+                    {completedAppointments} คนไข้
                   </Text>
                 </View>
               </View>
