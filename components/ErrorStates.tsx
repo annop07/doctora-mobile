@@ -179,4 +179,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   </View>
 );
 
+// Add displayName for better debugging
+ErrorState.displayName = 'ErrorState';
+NetworkError.displayName = 'NetworkError';
+EmptyState.displayName = 'EmptyState';
+
 export default ErrorState;
