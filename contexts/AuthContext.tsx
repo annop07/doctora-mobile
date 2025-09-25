@@ -6,7 +6,7 @@ import { authService } from '@/services/auth';
 import { storageService } from '@/utils/storage';
 
 // Mock mode for development (set to true to bypass API calls)
-const MOCK_AUTH_MODE = false;
+const MOCK_AUTH_MODE = false; // Set to true for testing, false for real API
 
 interface AuthProviderProps {
   children: ReactNode;

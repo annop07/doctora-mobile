@@ -3,7 +3,7 @@ import { storageService } from '@/utils/storage';
 import { ApiError, ApiResponse } from '@/types';
 
 // Base API URL - ใช้ IP address สำหรับ development
-const BASE_URL = 'http://10.66.92.31:8082/api'; // Local development - use IP instead of localhost for mobile devices
+const BASE_URL = 'http://10.66.92.116:8082/api'; // Local development - use IP instead of localhost for mobile devices
 
 class ApiClient {
   private client: AxiosInstance;
