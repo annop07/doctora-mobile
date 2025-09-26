@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AppointmentCard } from '@/components/Cards';
-import { useMyAppointments, useAppointmentFilters } from '@/services/appointments/hooks';
+import { useMyAppointments, useAppointmentFilters, useCancelAppointment } from '@/services/appointments/hooks';
 import { ErrorState } from '@/components/ErrorStates';
 import { AppointmentStatus } from '@/types/medical';
 
@@ -15,6 +15,7 @@ export default function Appointments() {
   // API Queries
   const { data: allAppointments, isLoading, error, refetch } = useMyAppointments();
   const filters = useAppointmentFilters();
+  const cancelMutation = useCancelAppointment();
 
   // Filter appointments based on selected filter
   const filteredAppointments = useMemo(() => {
@@ -45,6 +46,52 @@ export default function Appointments() {
       cancelled: filters.getCancelled(allAppointments).length
     };
   }, [allAppointments, filters]);
+
+  const handleCancelAppointment = (appointmentId: string) => {
+    const appointment = allAppointments?.find(apt => apt.id === appointmentId);
+    if (!appointment) return;
+
+    const doctorName = appointment.doctor.name || `${appointment.doctor.firstName} ${appointment.doctor.lastName}`;
+    const appointmentDate = new Date(appointment.appointmentDateTime);
+    const dateStr = appointmentDate.toLocaleDateString('th-TH', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    const timeStr = appointmentDate.toLocaleTimeString('th-TH', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    Alert.alert(
+      'ยืนยันการยกเลิกนัดหมาย',
+      `คุณต้องการยกเลิกนัดหมายกับ ${doctorName}\nวันที่ ${dateStr}\nเวลา ${timeStr} น.\n\nการยกเลิกนี้ไม่สามารถยกเลิกได้`,
+      [
+        {
+          text: 'ยกเลิก',
+          style: 'cancel',
+        },
+        {
+          text: 'ยืนยันการยกเลิก',
+          style: 'destructive',
+          onPress: () => {
+            cancelMutation.mutate(appointmentId, {
+              onSuccess: () => {
+                Alert.alert('สำเร็จ', 'ยกเลิกนัดหมายเรียบร้อยแล้ว');
+              },
+              onError: (error: any) => {
+                Alert.alert(
+                  'เกิดข้อผิดพลาด',
+                  error?.message || 'ไม่สามารถยกเลิกนัดหมายได้ กรุณาลองใหม่อีกครั้ง'
+                );
+              }
+            });
+          },
+        },
+      ]
+    );
+  };
 
   const handleAppointmentPress = (appointmentId: string) => {
     router.push(`/(root)/appointments/${appointmentId}`);
@@ -156,6 +203,7 @@ export default function Appointments() {
                 appointment={appointment}
                 onPress={() => handleAppointmentPress(appointment.id)}
                 showActions={true}
+                onCancel={handleCancelAppointment}
               />
             ))
           ) : (

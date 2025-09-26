@@ -13,6 +13,7 @@ interface AppointmentCardProps {
     appointment: Appointment;
     onPress?: () => void;
     showActions?: boolean;
+    onCancel?: (appointmentId: string) => void;
 }
 
 export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProps) => {
@@ -37,7 +38,9 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
 
                 {/* Specialty Badge */}
                 <View className='bg-primary-600/90 px-3 py-1 rounded-full absolute top-5 left-5'>
-                    <Text className='text-xs font-rubik-semiBold text-white'>{doctor.specialty.name}</Text>
+                    <Text className='text-xs font-rubik-semiBold text-white'>
+                        {typeof doctor.specialty === 'string' ? doctor.specialty : doctor.specialty?.name || doctor.specialtyName || 'ไม่ระบุแผนก'}
+                    </Text>
                 </View>
 
                 {/* Doctor Info Overlay */}
@@ -83,7 +86,7 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
                         {doctorName}
                     </Text>
                     <Text className='text-sm font-rubik text-primary-600 mt-1'>
-                        {doctor.specialty.name}
+                        {typeof doctor.specialty === 'string' ? doctor.specialty : doctor.specialty?.name || doctor.specialtyName || 'ไม่ระบุแผนก'}
                     </Text>
 
                     {/* Experience & Room */}
@@ -118,7 +121,7 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
     );
 };
 
-export const AppointmentCard = ({ appointment, onPress, showActions = false }: AppointmentCardProps) => {
+export const AppointmentCard = ({ appointment, onPress, showActions = false, onCancel }: AppointmentCardProps) => {
     const doctorName = appointment.doctor.name || `${appointment.doctor.firstName} ${appointment.doctor.lastName}`;
     const appointmentDate = new Date(appointment.appointmentDateTime);
     const dateStr = appointmentDate.toLocaleDateString('th-TH', {
@@ -164,6 +167,20 @@ export const AppointmentCard = ({ appointment, onPress, showActions = false }: A
         }
     };
 
+    const canBeCancelled = () => {
+        // สามารถยกเลิกได้เมื่อสถานะเป็น PENDING หรือ CONFIRMED และยังไม่ถึงเวลานัด
+        const now = new Date();
+        const appointmentTime = new Date(appointment.appointmentDateTime);
+        const isUpcoming = appointmentTime.getTime() > now.getTime();
+
+        // เช็คสถานะที่สามารถยกเลิกได้
+        const validStatus = appointment.status === AppointmentStatus.PENDING ||
+                           appointment.status === AppointmentStatus.CONFIRMED;
+
+
+        return isUpcoming && validStatus;
+    };
+
     return (
         <TouchableOpacity onPress={onPress} className='w-full my-2 p-4 rounded-xl bg-white border border-secondary-200 shadow-sm'>
             {/* Header with Status */}
@@ -191,7 +208,7 @@ export const AppointmentCard = ({ appointment, onPress, showActions = false }: A
                         {doctorName}
                     </Text>
                     <Text className='text-sm font-rubik text-primary-600'>
-                        {appointment.doctor.specialty.name}
+                        {typeof appointment.doctor.specialty === 'string' ? appointment.doctor.specialty : appointment.doctor.specialty?.name || appointment.doctor.specialtyName || 'ไม่ระบุแผนก'}
                     </Text>
 
                     {/* Duration & Room */}
@@ -224,6 +241,20 @@ export const AppointmentCard = ({ appointment, onPress, showActions = false }: A
                     </Text>
                 </View>
             </View>
+
+            {/* Cancel Button - Show only if appointment can be cancelled and onCancel is provided */}
+            {canBeCancelled() && onCancel && (
+                <View className='mt-3 pt-3 border-t border-secondary-100'>
+                    <TouchableOpacity
+                        onPress={() => onCancel(appointment.id)}
+                        className='bg-red-50 border border-red-200 px-3 py-2 rounded-lg self-end'
+                    >
+                        <Text className='text-red-600 font-rubik-medium text-sm'>
+                            ยกเลิกนัด
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </TouchableOpacity>
     );
 };
