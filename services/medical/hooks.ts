@@ -11,6 +11,12 @@ import type {
   DoctorSearchFilters,
   BookAppointmentRequest,
 } from '@/types';
+import {
+  recommendDoctors,
+  getSimpleDoctorRecommendations,
+  recommendDoctorsBySymptoms,
+  DoctorRecommendationRequest
+} from './recommendation';
 import { Alert } from 'react-native';
 
 // Query Keys
@@ -25,6 +31,11 @@ export const QUERY_KEYS = {
   specialty: (id: string) => ['specialties', id] as const,
   specialtiesWithCount: ['specialties', 'with-count'] as const,
   popularSpecialties: ['specialties', 'popular'] as const,
+
+  // Doctor recommendation keys
+  recommendations: (request: DoctorRecommendationRequest) => ['doctors', 'recommendations', request] as const,
+  symptomRecommendations: (symptoms: string) => ['doctors', 'symptoms', symptoms] as const,
+  simpleRecommendations: (specialtyId?: number) => ['doctors', 'simple-recommendations', specialtyId] as const,
 
   appointments: ['appointments'] as const,
   appointment: (id: string) => ['appointments', id] as const,
@@ -402,4 +413,84 @@ export const usePrefetch = () => {
       });
     },
   };
+};
+
+// ============= DOCTOR RECOMMENDATION HOOKS =============
+
+/**
+ * Hook for getting doctor recommendations based on criteria
+ */
+export const useDoctorRecommendations = (
+  request: DoctorRecommendationRequest,
+  enabled: boolean = true
+) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.recommendations(request),
+    queryFn: () => recommendDoctors(request),
+    enabled: enabled && (!!request.specialtyId || !!request.symptoms),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000,
+  });
+};
+
+/**
+ * Hook for getting doctor recommendations based on symptoms
+ */
+export const useSymptomBasedRecommendations = (
+  symptoms: string,
+  maxResults: number = 3,
+  enabled: boolean = true
+) => {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.symptomRecommendations(symptoms), maxResults],
+    queryFn: () => recommendDoctorsBySymptoms(symptoms, maxResults),
+    enabled: enabled && symptoms.trim().length >= 3,
+    staleTime: 3 * 60 * 1000, // 3 minutes for symptom-based recommendations
+    gcTime: 10 * 60 * 1000,
+  });
+};
+
+/**
+ * Hook for getting simple doctor recommendations (fallback)
+ */
+export const useSimpleDoctorRecommendations = (
+  specialtyId?: number,
+  symptoms?: string,
+  enabled: boolean = true
+) => {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.simpleRecommendations(specialtyId), symptoms],
+    queryFn: () => getSimpleDoctorRecommendations(specialtyId, symptoms),
+    enabled: enabled && !!specialtyId,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+};
+
+/**
+ * Mutation hook for requesting doctor recommendations
+ */
+export const useRecommendDoctors = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (request: DoctorRecommendationRequest) => recommendDoctors(request),
+    onSuccess: (data, variables) => {
+      // Cache the result
+      queryClient.setQueryData(
+        QUERY_KEYS.recommendations(variables),
+        data
+      );
+
+      console.log('🎯 Received recommendations:', data.doctors.length, 'doctors');
+    },
+    onError: (error: any) => {
+      console.error('❌ Error getting recommendations:', error);
+      Alert.alert(
+        'ไม่สามารถแนะนำแพทย์ได้',
+        'เกิดข้อผิดพลาดในการค้นหาแพทย์ที่เหมาะสม กรุณาลองใหม่อีกครั้ง',
+        [{ text: 'ตกลง' }]
+      );
+    },
+  });
 };

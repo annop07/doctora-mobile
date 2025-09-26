@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
@@ -11,12 +11,8 @@ import {
   EmptyState,
   DoctorCardSkeleton,
 } from "@/components";
-import {
-  mockDoctors,
-  getSpecialtyWithDoctorCount,
-  getDoctorsBySpecialty,
-  Doctor,
-} from "@/constants/mockMedicalData";
+import { useDoctors, useDoctorsInfinite, useSpecialtiesWithCount } from "@/services/medical/hooks";
+import { Doctor } from "@/types/medical";
 import icons from "@/constants/icons";
 
 type SortOption =
@@ -28,13 +24,11 @@ type SortOption =
 
 export default function DoctorList() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
-    null
-  );
-  const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
-  const [isLoading] = useState(false);
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>([]);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("rating");
+  const [useInfiniteScroll, setUseInfiniteScroll] = useState(false); // Toggle for pagination type
 
   // Filter states
   const [minFee, setMinFee] = useState(0);
@@ -42,81 +36,71 @@ export default function DoctorList() {
   const [minRating, setMinRating] = useState(0);
   const [experienceYears, setExperienceYears] = useState(0);
 
-  const specialtiesWithCount = getSpecialtyWithDoctorCount();
+  // API calls - Regular pagination
+  const {
+    data: doctorsResponse,
+    isLoading: doctorsLoading,
+    error: doctorsError
+  } = useDoctors({
+    specialtyId: selectedSpecialty || undefined,
+    query: searchQuery.trim() || undefined,
+    sortBy: sortBy === 'rating' ? 'rating' :
+           sortBy === 'price_low' ? 'consultationFee' :
+           sortBy === 'price_high' ? 'consultationFee' :
+           sortBy === 'experience' ? 'experienceYears' : undefined,
+    sortOrder: sortBy === 'price_low' ? 'asc' : 'desc',
+    minRating,
+    maxFee: maxFee < 10000 ? maxFee : undefined,
+    page: 0,
+    size: 10
+  });
 
-  // Mock recent doctors (in real app would come from user's history)
-  const recentDoctors = mockDoctors.slice(0, 2);
+  // API calls - Infinite scroll pagination
+  const {
+    data: infiniteData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: infiniteLoading,
+    error: infiniteError,
+    refetch: refetchInfinite
+  } = useDoctorsInfinite({
+    specialtyId: selectedSpecialty || undefined,
+    query: searchQuery.trim() || undefined,
+    sortBy: sortBy === 'rating' ? 'rating' :
+           sortBy === 'price_low' ? 'consultationFee' :
+           sortBy === 'price_high' ? 'consultationFee' :
+           sortBy === 'experience' ? 'experienceYears' : undefined,
+    sortOrder: sortBy === 'price_low' ? 'asc' : 'desc',
+    minRating,
+    maxFee: maxFee < 10000 ? maxFee : undefined
+  });
 
-  // Mock favorite doctors (in real app would come from user's favorites)
-  const favoriteDoctors = mockDoctors.slice(1, 3);
+  const {
+    data: specialtiesWithCount,
+    isLoading: specialtiesLoading,
+    error: specialtiesError
+  } = useSpecialtiesWithCount();
+
+  // Get doctors from API response based on pagination type
+  const doctors = useInfiniteScroll
+    ? (infiniteData?.pages.flatMap(page => page.doctors) || [])
+    : (doctorsResponse?.doctors || []);
+  const isLoading = (useInfiniteScroll ? infiniteLoading : doctorsLoading) || specialtiesLoading;
+  const error = useInfiniteScroll ? infiniteError : doctorsError;
+  const totalItems = useInfiniteScroll
+    ? (infiniteData?.pages[0]?.doctors.length || 0)
+    : (doctorsResponse?.totalItems || 0);
+
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    filterAndSortDoctors(query, selectedSpecialty);
+    // API will automatically refetch with new query
   };
 
   const handleSpecialtySelect = (specialtyId: string | null) => {
     setSelectedSpecialty(specialtyId);
-    filterAndSortDoctors(searchQuery, specialtyId);
-  };
-
-  const filterAndSortDoctors = (query: string, specialtyId: string | null) => {
-    let filteredDoctors = mockDoctors;
-
-    // Filter by specialty
-    if (specialtyId) {
-      filteredDoctors = getDoctorsBySpecialty(specialtyId);
-    }
-
-    // Filter by search query
-    if (query.trim()) {
-      filteredDoctors = filteredDoctors.filter(
-        (doctor) =>
-          `${doctor.user.firstName} ${doctor.user.lastName}`
-            .toLowerCase()
-            .includes(query.toLowerCase()) ||
-          doctor.specialty.name.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-
-    // Apply advanced filters
-    filteredDoctors = filteredDoctors.filter((doctor) => {
-      const feeMatch =
-        doctor.consultationFee >= minFee && doctor.consultationFee <= maxFee;
-      const ratingMatch = (doctor.rating || 0) >= minRating;
-      const experienceMatch = doctor.experienceYears >= experienceYears;
-      return feeMatch && ratingMatch && experienceMatch;
-    });
-
-    // Sort doctors
-    filteredDoctors = sortDoctors(filteredDoctors, sortBy);
-
-    setDoctors(filteredDoctors);
-  };
-
-  const sortDoctors = (
-    doctorList: Doctor[],
-    sortOption: SortOption
-  ): Doctor[] => {
-    const sorted = [...doctorList];
-
-    switch (sortOption) {
-      case "rating":
-        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      case "price_low":
-        return sorted.sort((a, b) => a.consultationFee - b.consultationFee);
-      case "price_high":
-        return sorted.sort((a, b) => b.consultationFee - a.consultationFee);
-      case "experience":
-        return sorted.sort((a, b) => b.experienceYears - a.experienceYears);
-      case "availability":
-        // Mock availability sorting - in real app would check actual availability
-        return sorted.sort((a, b) =>
-          a.user.firstName.localeCompare(b.user.firstName)
-        );
-      default:
-        return sorted;
-    }
+    // API will automatically refetch with new specialty filter
   };
 
   const handleDoctorPress = (doctorId: string) => {
@@ -125,12 +109,12 @@ export default function DoctorList() {
 
   const handleSort = (option: SortOption) => {
     setSortBy(option);
-    filterAndSortDoctors(searchQuery, selectedSpecialty);
+    // API will automatically refetch with new sort option
   };
 
   const handleApplyFilters = () => {
     setShowFilterSheet(false);
-    filterAndSortDoctors(searchQuery, selectedSpecialty);
+    // API will automatically refetch with new filters
   };
 
   const handleClearFilters = () => {
@@ -141,13 +125,13 @@ export default function DoctorList() {
     setMinRating(0);
     setExperienceYears(0);
     setSortBy("rating");
-    setDoctors(mockDoctors);
+    // API will automatically refetch with cleared filters
   };
 
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedSpecialty(null);
-    setDoctors(mockDoctors);
+    // API will automatically refetch
   };
 
   const getSortDisplayName = (option: SortOption): string => {
@@ -243,21 +227,27 @@ export default function DoctorList() {
                     : "text-text-primary"
                 }`}
               >
-                ทั้งหมด ({mockDoctors.length})
+                ทั้งหมด ({totalItems})
               </Text>
             </TouchableOpacity>
 
             {/* Specialty Options */}
-            {specialtiesWithCount.map((specialty) => (
-              <SpecialtyCard
-                key={specialty.id}
-                specialty={specialty}
-                selected={selectedSpecialty === specialty.id}
-                doctorCount={specialty.doctorCount}
-                variant="chip"
-                onPress={() => handleSpecialtySelect(specialty.id)}
-              />
-            ))}
+            {specialtiesError ? (
+              <Text className="text-sm font-rubik text-red-600 px-3 py-2">
+                ไม่สามารถโหลดแผนกได้
+              </Text>
+            ) : (
+              (specialtiesWithCount || []).map((specialty) => (
+                <SpecialtyCard
+                  key={specialty.id}
+                  specialty={specialty}
+                  selected={selectedSpecialty === specialty.id}
+                  doctorCount={specialty.doctorCount}
+                  variant="chip"
+                  onPress={() => handleSpecialtySelect(specialty.id)}
+                />
+              ))
+            )}
           </ScrollView>
         </View>
 
@@ -282,116 +272,113 @@ export default function DoctorList() {
           </View>
         </View>
 
-        {/* Recent & Favorites - Show only when no search/filter active */}
-        {!searchQuery && !selectedSpecialty && (
-          <>
-            {/* Recent Doctors */}
-            {recentDoctors.length > 0 && (
-              <View className="bg-white px-5 py-4 mb-4">
-                <View className="flex-row items-center justify-between mb-4">
-                  <Text className="text-lg font-rubik-semiBold text-text-primary">
-                    แพทย์ที่เพิ่งดู
-                  </Text>
-                  <TouchableOpacity>
-                    <Text className="text-sm font-rubik-medium text-primary-600">
-                      ดูทั้งหมด
-                    </Text>
-                  </TouchableOpacity>
-                </View>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {recentDoctors.map((doctor, index) => (
-                    <View
-                      key={doctor.id}
-                      className="mr-4"
-                      style={{ width: 280 }}
-                    >
-                      <DoctorCard
-                        doctor={doctor}
-                        variant="list"
-                        onPress={() => handleDoctorPress(doctor.id)}
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Favorite Doctors */}
-            {favoriteDoctors.length > 0 && (
-              <View className="bg-white px-5 py-4 mb-4">
-                <View className="flex-row items-center justify-between mb-4">
-                  <Text className="text-lg font-rubik-semiBold text-text-primary">
-                    แพทย์ที่ชื่นชอบ
-                  </Text>
-                  <TouchableOpacity>
-                    <Text className="text-sm font-rubik-medium text-primary-600">
-                      จัดการ
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {favoriteDoctors.map((doctor, index) => (
-                    <View
-                      key={doctor.id}
-                      className="mr-4"
-                      style={{ width: 280 }}
-                    >
-                      <DoctorCard
-                        doctor={doctor}
-                        variant="list"
-                        onPress={() => handleDoctorPress(doctor.id)}
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
-            {/* Quick Specialty Access */}
-            <View className="bg-white px-5 py-4 mb-4">
-              <Text className="text-lg font-rubik-semiBold text-text-primary mb-4">
-                เข้าถึงแผนกยอดนิยม
-              </Text>
-
-              <View className="flex-row flex-wrap">
-                {specialtiesWithCount.slice(0, 6).map((specialty) => (
-                  <TouchableOpacity
-                    key={specialty.id}
-                    onPress={() => handleSpecialtySelect(specialty.id)}
-                    className="w-1/2 mb-3 pr-2"
-                  >
-                    <SpecialtyCard
-                      specialty={specialty}
-                      variant="grid"
-                      selected={false}
-                      doctorCount={specialty.doctorCount}
-                      onPress={() => handleSpecialtySelect(specialty.id)}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
+        {/* Pagination Type Toggle - สำหรับ Demo */}
+        {(!searchQuery && !selectedSpecialty) && (
+          <View className="bg-white px-5 py-4 border-b border-secondary-100">
+            <Text className="text-base font-rubik-semiBold text-text-primary mb-3">
+              รูปแบบการโหลดข้อมูล
+            </Text>
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                onPress={() => setUseInfiniteScroll(false)}
+                className={`flex-1 px-4 py-3 rounded-xl border ${
+                  !useInfiniteScroll
+                    ? 'bg-primary-600 border-primary-600'
+                    : 'bg-white border-secondary-200'
+                }`}
+              >
+                <Text
+                  className={`text-sm font-rubik-medium text-center ${
+                    !useInfiniteScroll ? 'text-white' : 'text-text-primary'
+                  }`}
+                >
+                  หน้าธรรมดา
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setUseInfiniteScroll(true)}
+                className={`flex-1 px-4 py-3 rounded-xl border ${
+                  useInfiniteScroll
+                    ? 'bg-primary-600 border-primary-600'
+                    : 'bg-white border-secondary-200'
+                }`}
+              >
+                <Text
+                  className={`text-sm font-rubik-medium text-center ${
+                    useInfiniteScroll ? 'text-white' : 'text-text-primary'
+                  }`}
+                >
+                  โหลดต่อเนื่อง
+                </Text>
+              </TouchableOpacity>
             </View>
-          </>
+          </View>
         )}
 
         {/* Search Results */}
         <View className="px-5 py-2">
-          {isLoading ? (
+          {error ? (
+            // Error state
+            <EmptyState
+              icon={icons.search}
+              title="เกิดข้อผิดพลาด"
+              description="ไม่สามารถโหลดข้อมูลแพทย์ได้ กรุณาลองใหม่อีกครั้ง"
+              actionText="ลองใหม่"
+              onActionPress={() => {
+                if (useInfiniteScroll) {
+                  refetchInfinite();
+                } else {
+                  // Clear filters to trigger refetch
+                  setSearchQuery("");
+                  setSelectedSpecialty(null);
+                }
+              }}
+            />
+          ) : isLoading && doctors.length === 0 ? (
             // Loading skeletons
             Array.from({ length: 3 }, (_, index) => (
               <DoctorCardSkeleton key={index} />
             ))
           ) : doctors.length > 0 ? (
-            doctors.map((doctor) => (
-              <DoctorCard
-                key={doctor.id}
-                doctor={doctor}
-                variant="list"
-                onPress={() => handleDoctorPress(doctor.id)}
-              />
-            ))
+            <>
+              {doctors.map((doctor) => (
+                <DoctorCard
+                  key={doctor.id}
+                  doctor={doctor}
+                  variant="list"
+                  onPress={() => handleDoctorPress(doctor.id)}
+                />
+              ))}
+
+              {/* Load More Button - สำหรับ Infinite Scroll */}
+              {useInfiniteScroll && hasNextPage && (
+                <View className="items-center py-4">
+                  <TouchableOpacity
+                    onPress={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className={`px-6 py-3 rounded-xl border ${
+                      isFetchingNextPage
+                        ? 'bg-secondary-100 border-secondary-200'
+                        : 'bg-primary-600 border-primary-600'
+                    }`}
+                  >
+                    {isFetchingNextPage ? (
+                      <View className="flex-row items-center space-x-2">
+                        <ActivityIndicator size="small" color="#666" />
+                        <Text className="text-sm font-rubik-medium text-secondary-600">
+                          กำลังโหลด...
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text className="text-base font-rubik-medium text-white">
+                        โหลดเพิ่มเติม
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
           ) : searchQuery || selectedSpecialty ? (
             <EmptyState
               icon={icons.search}

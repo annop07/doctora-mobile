@@ -74,9 +74,11 @@ export interface DoctorSearchFilters {
   specialtyId?: string;
   minRating?: number;
   maxFee?: number;
-  sortBy?: 'name' | 'rating' | 'experience' | 'fee';
+  sortBy?: 'name' | 'rating' | 'experience' | 'experienceYears' | 'fee' | 'consultationFee';
   sortOrder?: 'asc' | 'desc';
   query?: string;
+  page?: number;
+  size?: number;
 }
 
 export interface BookAppointmentRequest {

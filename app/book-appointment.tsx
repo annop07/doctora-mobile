@@ -4,10 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Input } from '@/components/ui';
 import { Header, TimeSlotPicker, DoctorCard, SpecialtyCard } from '@/components';
-import { useSpecialtiesWithCount, useDoctorsBySpecialty, useDoctors } from '@/services/medical/hooks';
+import { useSpecialtiesWithCount, useDoctorsBySpecialty, useDoctors, useDoctorRecommendations } from '@/services/medical/hooks';
 import { useBookAppointment } from '@/services/appointments/hooks';
 import { ErrorState } from '@/components/ErrorStates';
-import { Doctor, Specialty, BookAppointmentRequest } from '@/types/medical';
+import { Doctor, BookAppointmentRequest } from '@/types/medical';
 
 export default function BookAppointment() {
   const { doctorId } = useLocalSearchParams<{ doctorId?: string }>();
@@ -19,20 +19,43 @@ export default function BookAppointment() {
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('');
+  const [useRecommendation, setUseRecommendation] = useState(true);
 
   // API Queries
   const { data: specialtiesWithCount, isLoading: specialtiesLoading, error: specialtiesError } = useSpecialtiesWithCount();
 
-  // Get doctors based on selected specialty
+  // Get doctors based on selected specialty (fallback)
   const firstSpecialtyId = selectedSpecialtyIds[0] || null;
   const {
     data: doctorsBySpecialty,
-    isLoading: doctorsLoading,
-    error: doctorsError
-  } = useDoctorsBySpecialty(firstSpecialtyId);
+    isLoading: doctorsBySpecialtyLoading,
+    error: doctorsBySpecialtyError
+  } = useDoctorsBySpecialty(firstSpecialtyId || '', 0, 10, !useRecommendation && !!firstSpecialtyId);
+
+  // Get recommended doctors using AI system
+  const {
+    data: recommendedDoctors,
+    isLoading: recommendationLoading,
+    error: recommendationError
+  } = useDoctorRecommendations(
+    {
+      specialtyId: firstSpecialtyId ? parseInt(firstSpecialtyId) : undefined,
+      symptoms: additionalInfo || undefined,
+      maxFee: 5000,
+      minRating: 3
+    },
+    useRecommendation && !!firstSpecialtyId
+  );
+
+  // Combine loading and error states
+  const doctorsLoading = useRecommendation ? recommendationLoading : doctorsBySpecialtyLoading;
+  const doctorsError = useRecommendation ? recommendationError : doctorsBySpecialtyError;
+  const displayedDoctors = useRecommendation
+    ? recommendedDoctors?.doctors || []
+    : (doctorsBySpecialty ? (Array.isArray(doctorsBySpecialty) ? doctorsBySpecialty : doctorsBySpecialty.doctors || []) : []);
 
   // Get specific doctor if doctorId is provided
-  const { data: allDoctorsResponse } = useDoctors({ limit: 100 });
+  const { data: allDoctorsResponse } = useDoctors({ size: 100 });
 
   // Appointment booking mutation
   const bookAppointmentMutation = useBookAppointment();
@@ -41,9 +64,11 @@ export default function BookAppointment() {
   const initialDoctor = useMemo(() => {
     if (doctorId && allDoctorsResponse?.doctors) {
       // Try both string and number comparison
-      return allDoctorsResponse.doctors.find(d =>
-        d.id === doctorId || d.id === parseInt(doctorId) || d.id.toString() === doctorId
-      ) || null;
+      return allDoctorsResponse.doctors.find(d => {
+        const docId = String(d.id);
+        const searchId = String(doctorId);
+        return docId === searchId;
+      }) || null;
     }
     return null;
   }, [doctorId, allDoctorsResponse?.doctors]);
@@ -72,12 +97,20 @@ export default function BookAppointment() {
     setCurrentStep(2);
   };
 
-  const handleBookWithDoctor = (doctorId: string) => {
-    const doctor = doctorsBySpecialty?.find(d => d.id === doctorId);
+  const handleBookWithDoctor = (doctorId: string | number) => {
+    const doctor = displayedDoctors?.find(d => {
+      const docId = typeof d.id === 'string' ? d.id : d.id.toString();
+      const searchId = typeof doctorId === 'string' ? doctorId : doctorId.toString();
+      return docId === searchId;
+    });
     if (doctor) {
       setSelectedDoctor(doctor);
       setCurrentStep(2.5); // ไปเลือกเวลาก่อน
     }
+  };
+
+  const handleToggleRecommendation = () => {
+    setUseRecommendation(!useRecommendation);
   };
 
   const handleTimeSelectionComplete = () => {
@@ -163,10 +196,10 @@ export default function BookAppointment() {
       {/* Header */}
       <View className="px-5 py-6">
         <Text className="text-2xl font-rubik-bold text-text-primary text-center mb-2">
-          ระบบแนะนำแพทย์อัตโนมัติ
+          🤖 ระบบแนะนำแพทย์อัตโนมัติ
         </Text>
         <Text className="text-base font-rubik text-secondary-600 text-center leading-6">
-          ตอบคำถามเพื่อให้เราแนะนำแพทย์ที่เหมาะสมกับอาการของคุณ
+          AI จะวิเคราะห์อาการและแนะนำแพทย์ที่เหมาะสมที่สุดสำหรับคุณ
         </Text>
       </View>
 
@@ -247,11 +280,14 @@ export default function BookAppointment() {
 
       {/* Additional Information */}
       <View className="px-5 mb-6">
-        <Text className="text-lg font-rubik-semiBold text-text-primary mb-4">
-          ข้อมูลเพิ่มเติม (ไม่บังคับ)
+        <Text className="text-lg font-rubik-semiBold text-text-primary mb-2">
+          อธิบายอาการของคุณ
+        </Text>
+        <Text className="text-sm font-rubik text-secondary-600 mb-4">
+          ระบบ AI จะใช้ข้อมูลนี้ในการแนะนำแพทย์ที่เหมาะสม (ไม่บังคับ)
         </Text>
         <Input
-          placeholder="อธิบายอาการเพิ่มเติม..."
+          placeholder="เช่น ปวดหัว ไข้ ปวดท้อง มีไข้สูง เจ็บคอ..."
           value={additionalInfo}
           onChangeText={setAdditionalInfo}
           multiline
@@ -283,10 +319,13 @@ export default function BookAppointment() {
       {/* Header */}
       <View className="px-5 py-6">
         <Text className="text-2xl font-rubik-bold text-text-primary text-center mb-2">
-          แพทย์ที่แนะนำ
+          {useRecommendation ? 'แพทย์ที่แนะนำโดย AI' : 'แพทย์ในแผนกที่เลือก'}
         </Text>
         <Text className="text-base font-rubik text-secondary-600 text-center">
-          เรา ได้คัดเลือกแพทย์ที่เหมาะสมกับอาการของคุณแล้ว
+          {useRecommendation
+            ? 'ระบบ AI ได้วิเคราะห์และคัดเลือกแพทย์ที่เหมาะสมกับอาการของคุณแล้ว'
+            : 'แสดงแพทย์ทั้งหมดในแผนกที่เลือก เรียงตามลำดับ'
+          }
         </Text>
       </View>
 
@@ -298,6 +337,33 @@ export default function BookAppointment() {
         </View>
         <View className="h-2 bg-secondary-100 rounded-full">
           <View className="h-2 bg-primary-600 rounded-full" style={{ width: '67%' }} />
+        </View>
+      </View>
+
+      {/* Recommendation Toggle */}
+      <View className="px-5 mb-6">
+        <View className="flex-row items-center justify-between p-4 bg-primary-50 rounded-xl">
+          <View className="flex-1">
+            <Text className="text-sm font-rubik-semiBold text-primary-700">
+              {useRecommendation ? '🤖 ระบบแนะนำ AI' : '📋 ดูทั้งหมด'}
+            </Text>
+            <Text className="text-xs font-rubik text-primary-600 mt-1">
+              {useRecommendation
+                ? 'วิเคราะห์ตามอาการและให้คะแนนความเหมาะสม'
+                : 'แสดงแพทย์ทั้งหมดในแผนกที่เลือก'
+              }
+            </Text>
+          </View>
+          <TouchableOpacity
+            onPress={handleToggleRecommendation}
+            className={`px-3 py-2 rounded-lg ${
+              useRecommendation ? 'bg-primary-600' : 'bg-secondary-400'
+            }`}
+          >
+            <Text className="text-xs font-rubik-semiBold text-white">
+              {useRecommendation ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -317,14 +383,23 @@ export default function BookAppointment() {
             message="ไม่สามารถโหลดข้อมูลแพทย์ได้"
             showRetry={false}
           />
-        ) : doctorsBySpecialty && doctorsBySpecialty.length > 0 ? (
-          doctorsBySpecialty.map((doctor, index) => (
+        ) : displayedDoctors && displayedDoctors.length > 0 ? (
+          displayedDoctors.map((doctor, index) => (
             <View key={doctor.id} className="mb-4 relative">
-              {/* Recommended Badge */}
-              {index === 0 && (
+              {/* Recommended Badge for AI recommendations */}
+              {useRecommendation && index === 0 && (
                 <View className="absolute -top-2 -right-2 bg-success-500 px-3 py-1 rounded-full z-10">
                   <Text className="text-xs font-rubik-semiBold text-white">
-                    แนะนำ
+                    🤖 AI แนะนำ
+                  </Text>
+                </View>
+              )}
+
+              {/* Score Badge for AI recommendations */}
+              {useRecommendation && recommendedDoctors?.message && index < 3 && (
+                <View className="absolute -top-2 -left-2 bg-primary-600 px-2 py-1 rounded-full z-10">
+                  <Text className="text-xs font-rubik-semiBold text-white">
+                    #{index + 1}
                   </Text>
                 </View>
               )}
@@ -339,11 +414,24 @@ export default function BookAppointment() {
         ) : (
           <View className="items-center py-8">
             <Text className="text-lg font-rubik-semiBold text-text-primary mb-2">
-              ไม่พบแพทย์ในแผนกนี้
+              {useRecommendation ? 'ไม่พบแพทย์ที่แนะนำ' : 'ไม่พบแพทย์ในแผนกนี้'}
             </Text>
-            <Text className="text-base font-rubik text-secondary-600 text-center">
-              ลองเลือกแผนกอื่น หรือเลือกแพทย์ด้วยตนเอง
+            <Text className="text-base font-rubik text-secondary-600 text-center mb-4">
+              {useRecommendation
+                ? 'ลองเพิ่มข้อมูลอาการ หรือเปลี่ยนเป็นโหมดดูทั้งหมด'
+                : 'ลองเลือกแผนกอื่น หรือเลือกแพทย์ด้วยตนเอง'
+              }
             </Text>
+            {useRecommendation && (
+              <TouchableOpacity
+                onPress={handleToggleRecommendation}
+                className="bg-primary-600 px-4 py-2 rounded-lg"
+              >
+                <Text className="text-white font-rubik-medium">
+                  ดูแพทย์ทั้งหมดในแผนก
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </View>

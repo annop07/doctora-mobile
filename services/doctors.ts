@@ -76,27 +76,26 @@ class DoctorService {
     }
     if (filters.maxFee) params.maxFee = filters.maxFee;
 
-    // Sort mapping
+    // Sort mapping - เปลี่ยนเป็น property names ที่ถูกต้อง
     if (filters.sortBy) {
       switch (filters.sortBy) {
         case 'name':
-          params.sort = 'user.firstName';
+          params.sort = filters.sortOrder === 'desc' ? 'id,desc' : 'id'; // ใช้ id แทน user.firstName
           break;
         case 'experience':
-          params.sort = 'experienceYears';
+          params.sort = filters.sortOrder === 'desc' ? 'experienceYears,desc' : 'experienceYears';
           break;
         case 'fee':
-          params.sort = 'consultationFee';
+          params.sort = filters.sortOrder === 'desc' ? 'consultationFee,desc' : 'consultationFee';
           break;
         case 'rating':
         default:
-          params.sort = 'id'; // Default sort, rating จะต้องเพิ่มใน backend
+          params.sort = filters.sortOrder === 'desc' ? 'id,desc' : 'id'; // Default sort by id
           break;
       }
-
-      if (filters.sortOrder === 'desc') {
-        params.sort = `${params.sort},desc`;
-      }
+    } else {
+      // Default sort when no sortBy is specified
+      params.sort = 'id';
     }
 
     return this.getDoctors(params);
@@ -129,7 +128,7 @@ class DoctorService {
       totalPages: number;
     }>(`/doctors/me/specialty/${specialtyId}?page=${page}&size=${size}`);
 
-    return response.data;
+    return response;
   }
 
   /**
@@ -138,7 +137,7 @@ class DoctorService {
    */
   async getDoctorStats(): Promise<DoctorStats> {
     const response = await apiClient.get<DoctorStats>('/doctors/me/stats');
-    return response.data;
+    return response;
   }
 
   /**
