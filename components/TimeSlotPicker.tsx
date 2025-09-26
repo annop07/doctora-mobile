@@ -102,7 +102,14 @@ export const TimeSlotPicker = ({
           available: true
         }));
 
-        console.log('⏰ Generated slots:', slots);
+        console.log('⏰ API Response Details:', {
+          doctorId,
+          selectedDate: selectedDate.toISOString(),
+          dateString,
+          rawResponse: response,
+          availableSlots: response.availableSlots,
+          generatedSlots: slots
+        });
         setRealTimeSlots(slots);
       } catch (error) {
         console.error('❌ Error fetching time slots:', error);
@@ -126,7 +133,10 @@ export const TimeSlotPicker = ({
     realTimeSlotsCount: realTimeSlots.length,
     displaySlotsCount: displaySlots.length,
     usingRealSlots: !!doctorId,
-    selectedDate: selectedDate.toISOString().split('T')[0]
+    selectedDate: selectedDate.toISOString().split('T')[0],
+    displaySlots: displaySlots.map(s => ({ time: s.time, available: s.available })),
+    realTimeSlots: realTimeSlots.map(s => ({ time: s.time, available: s.available })),
+    defaultSlots: generateDefaultSlots().map(s => ({ time: s.time, available: s.available }))
   });
 
   return (

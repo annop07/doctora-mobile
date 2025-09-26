@@ -101,22 +101,34 @@ export default function BookAppointment() {
       doctorId: selectedDoctor.id
     });
 
-    // Create booking request
+    // Create booking request - Fix timezone issue
     const appointmentDateTime = new Date(selectedDate);
     const [hours, minutes] = selectedTime.split(':').map(Number);
     appointmentDateTime.setHours(hours, minutes, 0, 0);
 
+    // Convert to local timezone format without UTC conversion
+    const year = appointmentDateTime.getFullYear();
+    const month = String(appointmentDateTime.getMonth() + 1).padStart(2, '0');
+    const day = String(appointmentDateTime.getDate()).padStart(2, '0');
+    const hour = String(appointmentDateTime.getHours()).padStart(2, '0');
+    const minute = String(appointmentDateTime.getMinutes()).padStart(2, '0');
+    const second = String(appointmentDateTime.getSeconds()).padStart(2, '0');
+
+    const localDateTimeString = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+
     // More debug logging
     console.log('🔍 DEBUG: Time Processing:', {
+      selectedTime,
       originalDateTime: selectedDate.toISOString(),
       parsedTime: { hours, minutes },
-      finalDateTime: appointmentDateTime.toISOString(),
-      finalDateTimeLocal: appointmentDateTime.toLocaleString()
+      appointmentDateTimeLocal: appointmentDateTime.toLocaleString(),
+      appointmentDateTimeUTC: appointmentDateTime.toISOString(),
+      finalLocalString: localDateTimeString
     });
 
     const bookingRequest: BookAppointmentRequest = {
       doctorId: selectedDoctor.id,
-      appointmentDateTime: appointmentDateTime.toISOString(),
+      appointmentDateTime: localDateTimeString,
       durationMinutes: 30,
       notes: additionalInfo || ''
     };
