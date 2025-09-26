@@ -1,13 +1,21 @@
-﻿import React from 'react';
-import icons from '@/constants/icons'
-import images from '@/constants/images'
-import { router } from 'expo-router';
-import { View, Text, ScrollView, Image, TouchableOpacity, ImageSourcePropType, Alert } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useAuth } from '@/contexts/AuthContext';
-import { AppointmentCard } from '@/components/Cards';
-import { getAppointmentsByPatient } from '@/constants/mockMedicalData';
-import { AppointmentStatus } from '@/types/medical';
+﻿import React from "react";
+import icons from "@/constants/icons";
+import images from "@/constants/images";
+import { router } from "expo-router";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  ImageSourcePropType,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/contexts/AuthContext";
+import { AppointmentCard } from "@/components/Cards";
+import { getAppointmentsByPatient } from "@/constants/mockMedicalData";
+import { AppointmentStatus } from "@/types/medical";
 
 interface SettingsItemProps {
   icon: ImageSourcePropType;
@@ -17,32 +25,46 @@ interface SettingsItemProps {
   showArrow?: boolean;
 }
 
-const SettingItem = ({ icon, title, onPress, textStyle, showArrow = true }
-  : SettingsItemProps) => (
-  <TouchableOpacity onPress={onPress} className='flex flex-row items-center justify-between py-4 px-4 border-b border-secondary-100'>
-    <View className='flex flex-row items-center gap-3'>
-      <Image source={icon} className='size-5' tintColor="#64748b" />
-      <Text className={`text-base font-rubik-medium text-text-primary ${textStyle}`}>
+const SettingItem = ({
+  icon,
+  title,
+  onPress,
+  textStyle,
+  showArrow = true,
+}: SettingsItemProps) => (
+  <TouchableOpacity
+    onPress={onPress}
+    className="flex flex-row items-center justify-between py-4 px-4 border-b border-secondary-100"
+  >
+    <View className="flex flex-row items-center gap-3">
+      <Image source={icon} className="size-5" tintColor="#64748b" />
+      <Text
+        className={`text-base font-rubik-medium text-text-primary ${textStyle}`}
+      >
         {title}
       </Text>
     </View>
-    {showArrow && <Image source={icons.rightArrow} className='size-4' tintColor="#94a3b8" />}
+    {showArrow && (
+      <Image source={icons.rightArrow} className="size-4" tintColor="#94a3b8" />
+    )}
   </TouchableOpacity>
-)
+);
 
 const Profile = () => {
   const { user, logout } = useAuth();
 
   // Get user's appointments
-  const userAppointments = getAppointmentsByPatient('pat-001');
+  const userAppointments = getAppointmentsByPatient("pat-001");
   const recentAppointments = userAppointments.slice(0, 3);
 
   // Calculate stats
-  const upcomingCount = userAppointments.filter(apt =>
-    apt.status === AppointmentStatus.CONFIRMED || apt.status === AppointmentStatus.PENDING
+  const upcomingCount = userAppointments.filter(
+    (apt) =>
+      apt.status === AppointmentStatus.CONFIRMED ||
+      apt.status === AppointmentStatus.PENDING
   ).length;
-  const completedCount = userAppointments.filter(apt =>
-    apt.status === AppointmentStatus.COMPLETED
+  const completedCount = userAppointments.filter(
+    (apt) => apt.status === AppointmentStatus.COMPLETED
   ).length;
 
   const handleLogout = async () => {
@@ -50,13 +72,12 @@ const Profile = () => {
   };
 
   const handleViewAllAppointments = () => {
-    router.push('/appointments');
+    router.push("/appointments");
   };
 
   const handleAppointmentPress = (appointmentId: string) => {
     router.push(`/(root)/appointments/${appointmentId}`);
   };
-
 
   return (
     <SafeAreaView className="bg-background-secondary h-full">
@@ -65,42 +86,55 @@ const Profile = () => {
         contentContainerStyle={{ paddingBottom: 32 }}
       >
         {/* Header */}
-        <View className='bg-white px-5 py-4 border-b border-secondary-200'>
-          <View className='flex flex-row items-center justify-between'>
-            <Text className='text-2xl font-rubik-bold text-text-primary'>โปรไฟล์</Text>
+        <View className="bg-white px-5 py-4 border-b border-secondary-200">
+          <View className="flex flex-row items-center justify-between">
+            <Text className="text-2xl font-rubik-bold text-text-primary">
+              โปรไฟล์
+            </Text>
             <TouchableOpacity>
-              <Image source={icons.bell} className='size-6' tintColor="#64748b" />
+              <Image
+                source={icons.bell}
+                className="size-6"
+                tintColor="#64748b"
+              />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Profile Info */}
-        <View className='bg-white px-5 py-6 mb-4'>
-          <View className='flex flex-row items-center'>
-            <View className='relative'>
-              <Image source={images.avatar} className='size-20 rounded-full border-2 border-primary-100' />
-              <TouchableOpacity className='absolute -bottom-1 -right-1 bg-primary-600 p-2 rounded-full'>
-                <Image source={icons.edit} className='size-3' tintColor="white" />
+        <View className="bg-white px-5 py-6 mb-4">
+          <View className="flex flex-row items-center">
+            <View className="relative">
+              <Image
+                source={images.avatar}
+                className="size-20 rounded-full border-2 border-primary-100"
+              />
+              <TouchableOpacity className="absolute -bottom-1 -right-1 bg-primary-600 p-2 rounded-full">
+                <Image
+                  source={icons.edit}
+                  className="size-3"
+                  tintColor="white"
+                />
               </TouchableOpacity>
             </View>
 
-            <View className='flex-1 ml-4'>
-              <Text className='text-xl font-rubik-bold text-text-primary'>
-                {user?.firstName || 'ผู้ใช้'} {user?.lastName || ''}
+            <View className="flex-1 ml-4">
+              <Text className="text-xl font-rubik-bold text-text-primary">
+                {user?.firstName || "ผู้ใช้"} {user?.lastName || ""}
               </Text>
-              <Text className='text-sm font-rubik text-secondary-600 mt-1'>
-                {user?.email || 'user@example.com'}
+              <Text className="text-sm font-rubik text-secondary-600 mt-1">
+                {user?.email || "user@example.com"}
               </Text>
 
               {/* Stats */}
-              <View className='flex flex-row mt-3'>
-                <View className='bg-primary-50 px-3 py-1 rounded-full mr-3'>
-                  <Text className='text-xs font-rubik-semiBold text-primary-600'>
+              <View className="flex flex-row mt-3">
+                <View className="bg-primary-50 px-3 py-1 rounded-full mr-3">
+                  <Text className="text-xs font-rubik-semiBold text-primary-600">
                     {upcomingCount} นัดที่จะมาถึง
                   </Text>
                 </View>
-                <View className='bg-success-50 px-3 py-1 rounded-full'>
-                  <Text className='text-xs font-rubik-semiBold text-success-600'>
+                <View className="bg-success-50 px-3 py-1 rounded-full">
+                  <Text className="text-xs font-rubik-semiBold text-success-600">
                     {completedCount} นัดเสร็จสิ้น
                   </Text>
                 </View>
@@ -110,20 +144,20 @@ const Profile = () => {
         </View>
 
         {/* Recent Appointments */}
-        <View className='bg-white mb-4'>
-          <View className='flex flex-row items-center justify-between px-5 py-4 border-b border-secondary-100'>
-            <Text className='text-lg font-rubik-semiBold text-text-primary'>
+        <View className="bg-white mb-4">
+          <View className="flex flex-row items-center justify-between px-5 py-4 border-b border-secondary-100">
+            <Text className="text-lg font-rubik-semiBold text-text-primary">
               นัดหมายล่าสุด
             </Text>
             <TouchableOpacity onPress={handleViewAllAppointments}>
-              <Text className='text-sm font-rubik-medium text-primary-600'>
+              <Text className="text-sm font-rubik-medium text-primary-600">
                 ดูทั้งหมด
               </Text>
             </TouchableOpacity>
           </View>
 
           {recentAppointments.length > 0 ? (
-            <View className='px-5 py-2'>
+            <View className="px-5 py-2">
               {recentAppointments.map((appointment) => (
                 <AppointmentCard
                   key={appointment.id}
@@ -133,8 +167,8 @@ const Profile = () => {
               ))}
             </View>
           ) : (
-            <View className='px-5 py-8 items-center'>
-              <Text className='text-base font-rubik text-secondary-600'>
+            <View className="px-5 py-8 items-center">
+              <Text className="text-base font-rubik text-secondary-600">
                 ยังไม่มีนัดหมาย
               </Text>
             </View>
@@ -142,7 +176,7 @@ const Profile = () => {
         </View>
 
         {/* Quick Actions */}
-        <View className='bg-white mb-4'>
+        <View className="bg-white mb-4">
           <SettingItem
             icon={icons.calendar}
             title="การนัดหมายของฉัน"
@@ -151,47 +185,59 @@ const Profile = () => {
           <SettingItem
             icon={icons.wallet}
             title="ประวัติการชำระเงิน"
-            onPress={() => Alert.alert('ประวัติการชำระเงิน', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
+            onPress={() =>
+              Alert.alert("ประวัติการชำระเงิน", "ฟีเจอร์นี้จะเปิดใช้งานในอนาคต")
+            }
           />
           <SettingItem
             icon={icons.person}
             title="แก้ไขข้อมูลส่วนตัว"
-            onPress={() => Alert.alert('แก้ไขข้อมูลส่วนตัว', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
+            onPress={() =>
+              Alert.alert("แก้ไขข้อมูลส่วนตัว", "ฟีเจอร์นี้จะเปิดใช้งานในอนาคต")
+            }
           />
         </View>
 
         {/* Settings */}
-        <View className='bg-white mb-4'>
+        <View className="bg-white mb-4">
           <SettingItem
             icon={icons.bell}
             title="การแจ้งเตือน"
-            onPress={() => Alert.alert('การแจ้งเตือน', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
+            onPress={() =>
+              Alert.alert("การแจ้งเตือน", "ฟีเจอร์นี้จะเปิดใช้งานในอนาคต")
+            }
           />
           <SettingItem
             icon={icons.info}
             title="ช่วยเหลือและสนับสนุน"
-            onPress={() => Alert.alert('ช่วยเหลือและสนับสนุน', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
+            onPress={() =>
+              Alert.alert(
+                "ช่วยเหลือและสนับสนุน",
+                "ฟีเจอร์นี้จะเปิดใช้งานในอนาคต"
+              )
+            }
           />
           <SettingItem
             icon={icons.info}
             title="เกี่ยวกับเรา"
-            onPress={() => Alert.alert('เกี่ยวกับเรา', 'ฟีเจอร์นี้จะเปิดใช้งานในอนาคต')}
+            onPress={() =>
+              Alert.alert("เกี่ยวกับเรา", "ฟีเจอร์นี้จะเปิดใช้งานในอนาคต")
+            }
           />
         </View>
 
         {/* Logout */}
-        <View className='bg-white'>
+        <View className="bg-white">
           <SettingItem
             icon={icons.logout}
             title="ออกจากระบบ"
-            textStyle='text-error-500'
+            textStyle="text-error-500"
             showArrow={false}
             onPress={handleLogout}
           />
         </View>
-
       </ScrollView>
     </SafeAreaView>
-  )
-}
-export default Profile
+  );
+};
+export default Profile;

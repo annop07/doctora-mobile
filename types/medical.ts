@@ -82,6 +82,7 @@ export interface DoctorSearchFilters {
 export interface BookAppointmentRequest {
   doctorId: string;
   appointmentDateTime: string;
+  durationMinutes?: number;
   notes?: string;
 }
 

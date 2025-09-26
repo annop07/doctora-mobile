@@ -271,7 +271,12 @@ export const TimeSlotPicker = ({
                 return (
                   <TouchableOpacity
                     key={slot.time}
-                    onPress={() => isAvailable && onTimeSelect(slot.time)}
+                    onPress={() => {
+                      if (isAvailable) {
+                        console.log('🔍 DEBUG: TimeSlotPicker - Time selected:', slot.time);
+                        onTimeSelect(slot.time);
+                      }
+                    }}
                     disabled={!isAvailable}
                     className={`px-4 py-3 rounded-xl border mr-3 mb-3 min-w-20 items-center ${
                       isSelected

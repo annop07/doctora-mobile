@@ -1,76 +1,80 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button, Card, LoadingSpinner, ErrorStates } from '@/components/ui';
-import { useDoctor } from '@/services/medical/hooks';
-import { Availability } from '@/types';
-import icons from '@/constants/icons';
-import images from '@/constants/images';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router, useLocalSearchParams } from "expo-router";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button, Card, LoadingSpinner, ErrorStates } from "@/components/ui";
+import { useDoctor } from "@/services/medical/hooks";
+import { Availability } from "@/types";
+import icons from "@/constants/icons";
+import images from "@/constants/images";
 
 // Mock availability data
 const mockAvailability: Availability[] = [
   {
-    id: 'av-1',
-    doctorId: '1',
+    id: "av-1",
+    doctorId: "1",
     dayOfWeek: 1, // Monday
-    startTime: '09:00',
-    endTime: '12:00',
+    startTime: "09:00",
+    endTime: "12:00",
     isActive: true,
-    createdAt: '2024-01-01T00:00:00Z'
+    createdAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: 'av-2',
-    doctorId: '1',
+    id: "av-2",
+    doctorId: "1",
     dayOfWeek: 1, // Monday
-    startTime: '14:00',
-    endTime: '17:00',
+    startTime: "14:00",
+    endTime: "17:00",
     isActive: true,
-    createdAt: '2024-01-01T00:00:00Z'
+    createdAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: 'av-3',
-    doctorId: '1',
+    id: "av-3",
+    doctorId: "1",
     dayOfWeek: 3, // Wednesday
-    startTime: '09:00',
-    endTime: '12:00',
+    startTime: "09:00",
+    endTime: "12:00",
     isActive: true,
-    createdAt: '2024-01-01T00:00:00Z'
+    createdAt: "2024-01-01T00:00:00Z",
   },
   {
-    id: 'av-4',
-    doctorId: '1',
+    id: "av-4",
+    doctorId: "1",
     dayOfWeek: 5, // Friday
-    startTime: '09:00',
-    endTime: '12:00',
+    startTime: "09:00",
+    endTime: "12:00",
     isActive: true,
-    createdAt: '2024-01-01T00:00:00Z'
-  }
+    createdAt: "2024-01-01T00:00:00Z",
+  },
 ];
 
 const dayNames = {
-  1: 'จันทร์',
-  2: 'อังคาร',
-  3: 'พุธ',
-  4: 'พฤหัสบดี',
-  5: 'ศุกร์',
-  6: 'เสาร์',
-  7: 'อาทิตย์'
+  1: "จันทร์",
+  2: "อังคาร",
+  3: "พุธ",
+  4: "พฤหัสบดี",
+  5: "ศุกร์",
+  6: "เสาร์",
+  7: "อาทิตย์",
 };
 
 export default function DoctorDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
-  const [selectedTab, setSelectedTab] = useState<'about' | 'availability' | 'reviews'>('about');
+  const [selectedTab, setSelectedTab] = useState<
+    "about" | "availability" | "reviews"
+  >("about");
 
   // Fetch doctor data from API
-  const {
-    data: doctor,
-    isLoading,
-    error,
-    refetch
-  } = useDoctor(id as string);
+  const { data: doctor, isLoading, error, refetch } = useDoctor(id as string);
 
   // Loading state
   if (isLoading) {
@@ -96,27 +100,25 @@ export default function DoctorDetail() {
   }
 
   const doctorName = doctor.name || `${doctor.firstName} ${doctor.lastName}`;
-  const doctorAvailability = mockAvailability.filter(av => av.doctorId === doctor.id);
+  const doctorAvailability = mockAvailability.filter(
+    (av) => av.doctorId === doctor.id
+  );
 
   // Mock statistics for now (will be replaced with real API data later)
   const completedAppointments = 25; // Mock data
 
   const handleBookAppointment = () => {
     if (!user) {
-      Alert.alert(
-        'กรุณาเข้าสู่ระบบ',
-        'คุณต้องเข้าสู่ระบบก่อนจองนัดหมาย',
-        [
-          { text: 'ยกเลิก', style: 'cancel' },
-          { text: 'เข้าสู่ระบบ', onPress: () => router.push('/sign-in') }
-        ]
-      );
+      Alert.alert("กรุณาเข้าสู่ระบบ", "คุณต้องเข้าสู่ระบบก่อนจองนัดหมาย", [
+        { text: "ยกเลิก", style: "cancel" },
+        { text: "เข้าสู่ระบบ", onPress: () => router.push("/sign-in") },
+      ]);
       return;
     }
 
     router.push({
-      pathname: '/book-appointment',
-      params: { doctorId: doctor.id }
+      pathname: "/book-appointment",
+      params: { doctorId: doctor.id },
     });
   };
 
@@ -128,7 +130,7 @@ export default function DoctorDetail() {
           เกี่ยวกับแพทย์
         </Text>
         <Text className="text-base font-rubik text-secondary-600 leading-6">
-          {doctor.bio || 'ไม่มีข้อมูลประวัติแพทย์'}
+          {doctor.bio || "ไม่มีข้อมูลประวัติแพทย์"}
         </Text>
       </View>
 
@@ -153,7 +155,7 @@ export default function DoctorDetail() {
           <View className="flex-row items-center">
             <View className="w-2 h-2 bg-primary-600 rounded-full mr-3" />
             <Text className="text-base font-rubik text-secondary-600">
-              ความเชี่ยวชาญ: {doctor.specialty?.name || 'ไม่ระบุแผนก'}
+              ความเชี่ยวชาญ: {doctor.specialty?.name || "ไม่ระบุแผนก"}
             </Text>
           </View>
           {doctor.roomNumber && (
@@ -174,14 +176,22 @@ export default function DoctorDetail() {
         </Text>
         <View className="space-y-2">
           <View className="flex-row items-center">
-            <Image source={icons.person} className="size-4 mr-3" tintColor="#64748b" />
+            <Image
+              source={icons.person}
+              className="size-4 mr-3"
+              tintColor="#64748b"
+            />
             <Text className="text-base font-rubik text-secondary-600">
               {doctor.email}
             </Text>
           </View>
           {doctor.phone && (
             <View className="flex-row items-center">
-              <Image source={icons.phone} className="size-4 mr-3" tintColor="#64748b" />
+              <Image
+                source={icons.phone}
+                className="size-4 mr-3"
+                tintColor="#64748b"
+              />
               <Text className="text-base font-rubik text-secondary-600">
                 {doctor.phone}
               </Text>
@@ -254,7 +264,11 @@ export default function DoctorDetail() {
         <View className="bg-white px-5 py-4 border-b border-secondary-200">
           <View className="flex-row items-center">
             <TouchableOpacity onPress={() => router.back()} className="mr-4">
-              <Image source={icons.backArrow} className="size-6" tintColor="#64748b" />
+              <Image
+                source={icons.backArrow}
+                className="size-6"
+                tintColor="#64748b"
+              />
             </TouchableOpacity>
             <Text className="text-xl font-rubik-bold text-text-primary">
               ข้อมูลแพทย์
@@ -267,7 +281,11 @@ export default function DoctorDetail() {
           <View className="flex-row">
             {/* Doctor Image */}
             <Image
-              source={doctor.profileImage ? { uri: doctor.profileImage } : images.avatar}
+              source={
+                doctor.profileImage
+                  ? { uri: doctor.profileImage }
+                  : images.avatar
+              }
               className="w-20 h-20 rounded-full border-2 border-primary-100"
             />
 
@@ -277,15 +295,19 @@ export default function DoctorDetail() {
                 {doctorName}
               </Text>
               <Text className="text-base font-rubik text-primary-600 mt-1">
-                {doctor.specialty?.name || 'ไม่ระบุแผนก'}
+                {doctor.specialty?.name || "ไม่ระบุแผนก"}
               </Text>
 
               {/* Rating and Stats */}
               <View className="flex-row items-center mt-2">
                 <View className="flex-row items-center mr-4">
-                  <Image source={icons.star} className="size-4 mr-1" tintColor="#f59e0b" />
+                  <Image
+                    source={icons.star}
+                    className="size-4 mr-1"
+                    tintColor="#f59e0b"
+                  />
                   <Text className="text-sm font-rubik-semiBold text-secondary-700">
-                    {doctor.rating?.toFixed(1) || 'N/A'}
+                    {doctor.rating?.toFixed(1) || "N/A"}
                   </Text>
                   <Text className="text-sm font-rubik text-secondary-500 ml-1">
                     ({doctor.totalRatings || 0} รีวิว)
@@ -325,18 +347,18 @@ export default function DoctorDetail() {
         <View className="bg-white border-b border-secondary-100">
           <View className="flex-row">
             <TouchableOpacity
-              onPress={() => setSelectedTab('about')}
+              onPress={() => setSelectedTab("about")}
               className={`flex-1 py-4 border-b-2 ${
-                selectedTab === 'about'
-                  ? 'border-primary-600'
-                  : 'border-transparent'
+                selectedTab === "about"
+                  ? "border-primary-600"
+                  : "border-transparent"
               }`}
             >
               <Text
                 className={`text-center font-rubik-medium ${
-                  selectedTab === 'about'
-                    ? 'text-primary-600'
-                    : 'text-secondary-600'
+                  selectedTab === "about"
+                    ? "text-primary-600"
+                    : "text-secondary-600"
                 }`}
               >
                 เกี่ยวกับ
@@ -344,18 +366,18 @@ export default function DoctorDetail() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setSelectedTab('availability')}
+              onPress={() => setSelectedTab("availability")}
               className={`flex-1 py-4 border-b-2 ${
-                selectedTab === 'availability'
-                  ? 'border-primary-600'
-                  : 'border-transparent'
+                selectedTab === "availability"
+                  ? "border-primary-600"
+                  : "border-transparent"
               }`}
             >
               <Text
                 className={`text-center font-rubik-medium ${
-                  selectedTab === 'availability'
-                    ? 'text-primary-600'
-                    : 'text-secondary-600'
+                  selectedTab === "availability"
+                    ? "text-primary-600"
+                    : "text-secondary-600"
                 }`}
               >
                 ตารางเวลา
@@ -363,18 +385,18 @@ export default function DoctorDetail() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setSelectedTab('reviews')}
+              onPress={() => setSelectedTab("reviews")}
               className={`flex-1 py-4 border-b-2 ${
-                selectedTab === 'reviews'
-                  ? 'border-primary-600'
-                  : 'border-transparent'
+                selectedTab === "reviews"
+                  ? "border-primary-600"
+                  : "border-transparent"
               }`}
             >
               <Text
                 className={`text-center font-rubik-medium ${
-                  selectedTab === 'reviews'
-                    ? 'text-primary-600'
-                    : 'text-secondary-600'
+                  selectedTab === "reviews"
+                    ? "text-primary-600"
+                    : "text-secondary-600"
                 }`}
               >
                 รีวิว
@@ -385,9 +407,9 @@ export default function DoctorDetail() {
 
         {/* Tab Content */}
         <View className="bg-white">
-          {selectedTab === 'about' && renderAboutTab()}
-          {selectedTab === 'availability' && renderAvailabilityTab()}
-          {selectedTab === 'reviews' && renderReviewsTab()}
+          {selectedTab === "about" && renderAboutTab()}
+          {selectedTab === "availability" && renderAvailabilityTab()}
+          {selectedTab === "reviews" && renderReviewsTab()}
         </View>
 
         {/* Spacing for floating button */}

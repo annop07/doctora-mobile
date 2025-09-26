@@ -93,10 +93,26 @@ export default function BookAppointment() {
   const handleConfirmBooking = async () => {
     if (!selectedDoctor || !selectedTime) return;
 
+    // Debug logging
+    console.log('🔍 DEBUG: Booking Debug Info:', {
+      selectedTime,
+      selectedDate: selectedDate.toISOString(),
+      selectedDoctor: selectedDoctor.name,
+      doctorId: selectedDoctor.id
+    });
+
     // Create booking request
     const appointmentDateTime = new Date(selectedDate);
     const [hours, minutes] = selectedTime.split(':').map(Number);
     appointmentDateTime.setHours(hours, minutes, 0, 0);
+
+    // More debug logging
+    console.log('🔍 DEBUG: Time Processing:', {
+      originalDateTime: selectedDate.toISOString(),
+      parsedTime: { hours, minutes },
+      finalDateTime: appointmentDateTime.toISOString(),
+      finalDateTimeLocal: appointmentDateTime.toLocaleString()
+    });
 
     const bookingRequest: BookAppointmentRequest = {
       doctorId: selectedDoctor.id,
@@ -104,6 +120,8 @@ export default function BookAppointment() {
       durationMinutes: 30,
       notes: additionalInfo || ''
     };
+
+    console.log('🔍 DEBUG: Final Booking Request:', bookingRequest);
 
     try {
       const result = await bookAppointmentMutation.mutateAsync(bookingRequest);
@@ -476,6 +494,7 @@ export default function BookAppointment() {
           onDateSelect={setSelectedDate}
           selectedTime={selectedTime}
           onTimeSelect={setSelectedTime}
+          doctorId={selectedDoctor?.id}
         />
       </View>
 

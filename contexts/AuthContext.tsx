@@ -1,9 +1,22 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Alert } from 'react-native';
-import { router } from 'expo-router';
-import { AuthContextType, User, LoginRequest, RegisterRequest, ApiError, UserRole } from '@/types';
-import { authService } from '@/services/auth';
-import { storageService } from '@/utils/storage';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { Alert } from "react-native";
+import { router } from "expo-router";
+import {
+  AuthContextType,
+  User,
+  LoginRequest,
+  RegisterRequest,
+  ApiError,
+  UserRole,
+} from "@/types";
+import { authService } from "@/services/auth";
+import { storageService } from "@/utils/storage";
 
 // Mock mode for development (set to true to bypass API calls)
 const MOCK_AUTH_MODE = false; // Set to true for testing, false for real API
@@ -38,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await clearAuthData();
       }
     } catch (error) {
-      console.error('Auth initialization error:', error);
+      console.error("Auth initialization error:", error);
       await clearAuthData();
     } finally {
       setLoading(false);
@@ -51,19 +64,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (MOCK_AUTH_MODE) {
         // Mock login for development
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API delay
 
         const mockUser: User = {
-          id: '1',
+          id: "1",
           email: credentials.email,
-          firstName: 'ผู้ใช้',
-          lastName: 'ทดสอบ',
+          firstName: "ผู้ใช้",
+          lastName: "ทดสอบ",
           role: UserRole.PATIENT,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
 
-        const mockToken = 'mock-jwt-token';
+        const mockToken = "mock-jwt-token";
 
         await Promise.all([
           storageService.setAuthToken(mockToken),
@@ -73,13 +86,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(mockToken);
         setUser(mockUser);
 
-        router.replace('/(root)/(tabs)');
+        router.replace("/(root)/(tabs)");
         return;
       }
 
       const authResponse = await authService.login(credentials);
-      console.log('🔍 AuthContext - authResponse:', authResponse);
-      console.log('🔍 AuthContext - authResponse.token:', authResponse?.token);
+      console.log("🔍 AuthContext - authResponse:", authResponse);
+      console.log("🔍 AuthContext - authResponse.token:", authResponse?.token);
 
       await Promise.all([
         storageService.setAuthToken(authResponse.token),
@@ -105,11 +118,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         updatedAt: new Date().toISOString(),
       });
 
-      router.replace('/(root)/(tabs)');
+      router.replace("/(root)/(tabs)");
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       const apiError = error as ApiError;
-      Alert.alert('เข้าสู่ระบบไม่สำเร็จ', apiError.message || 'กรุณาตรวจสอบอีเมลและรหัสผ่าน');
+      Alert.alert(
+        "เข้าสู่ระบบไม่สำเร็จ",
+        apiError.message || "กรุณาตรวจสอบอีเมลและรหัสผ่าน"
+      );
       throw error;
     } finally {
       setLoading(false);
@@ -120,12 +136,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setLoading(true);
       await authService.register(userData);
-      Alert.alert('สมัครสมาชิกสำเร็จ', 'กรุณาเข้าสู่ระบบด้วยอีเมลและรหัสผ่านที่คุณสมัคร', [
-        { text: 'ตกลง', onPress: () => router.replace('/sign-in') }
-      ]);
+      Alert.alert(
+        "สมัครสมาชิกสำเร็จ",
+        "กรุณาเข้าสู่ระบบด้วยอีเมลและรหัสผ่านที่คุณสมัคร",
+        [{ text: "ตกลง", onPress: () => router.replace("/sign-in") }]
+      );
     } catch (error) {
       const apiError = error as ApiError;
-      Alert.alert('สมัครสมาชิกไม่สำเร็จ', apiError.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+      Alert.alert(
+        "สมัครสมาชิกไม่สำเร็จ",
+        apiError.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง"
+      );
       throw error;
     } finally {
       setLoading(false);
@@ -137,11 +158,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(true);
       await authService.logout();
     } catch (error) {
-      console.warn('Logout API call failed:', error);
+      console.warn("Logout API call failed:", error);
     } finally {
       await clearAuthData();
       setLoading(false);
-      router.replace('/sign-in');
+      router.replace("/sign-in");
     }
   };
 
@@ -151,27 +172,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken(null);
       setUser(null);
     } catch (error) {
-      console.error('Error clearing auth data:', error);
+      console.error("Error clearing auth data:", error);
     }
   };
 
   const isAuthenticated = !!(token && user);
 
   const contextValue: AuthContextType = {
-    user, token, loading, login, register, logout, isAuthenticated,
+    user,
+    token,
+    loading,
+    login,
+    register,
+    logout,
+    isAuthenticated,
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

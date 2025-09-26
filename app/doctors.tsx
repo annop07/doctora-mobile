@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import React, { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import {
   Header,
   SearchBar,
@@ -9,25 +9,32 @@ import {
   DoctorCard,
   SpecialtyCard,
   EmptyState,
-  DoctorCardSkeleton
-} from '@/components';
+  DoctorCardSkeleton,
+} from "@/components";
 import {
   mockDoctors,
   getSpecialtyWithDoctorCount,
   getDoctorsBySpecialty,
-  Doctor
-} from '@/constants/mockMedicalData';
-import icons from '@/constants/icons';
+  Doctor,
+} from "@/constants/mockMedicalData";
+import icons from "@/constants/icons";
 
-type SortOption = 'rating' | 'price_low' | 'price_high' | 'experience' | 'availability';
+type SortOption =
+  | "rating"
+  | "price_low"
+  | "price_high"
+  | "experience"
+  | "availability";
 
 export default function DoctorList() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(
+    null
+  );
   const [doctors, setDoctors] = useState<Doctor[]>(mockDoctors);
   const [isLoading] = useState(false);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
-  const [sortBy, setSortBy] = useState<SortOption>('rating');
+  const [sortBy, setSortBy] = useState<SortOption>("rating");
 
   // Filter states
   const [minFee, setMinFee] = useState(0);
@@ -63,15 +70,19 @@ export default function DoctorList() {
 
     // Filter by search query
     if (query.trim()) {
-      filteredDoctors = filteredDoctors.filter(doctor =>
-        `${doctor.user.firstName} ${doctor.user.lastName}`.toLowerCase().includes(query.toLowerCase()) ||
-        doctor.specialty.name.toLowerCase().includes(query.toLowerCase())
+      filteredDoctors = filteredDoctors.filter(
+        (doctor) =>
+          `${doctor.user.firstName} ${doctor.user.lastName}`
+            .toLowerCase()
+            .includes(query.toLowerCase()) ||
+          doctor.specialty.name.toLowerCase().includes(query.toLowerCase())
       );
     }
 
     // Apply advanced filters
-    filteredDoctors = filteredDoctors.filter(doctor => {
-      const feeMatch = doctor.consultationFee >= minFee && doctor.consultationFee <= maxFee;
+    filteredDoctors = filteredDoctors.filter((doctor) => {
+      const feeMatch =
+        doctor.consultationFee >= minFee && doctor.consultationFee <= maxFee;
       const ratingMatch = (doctor.rating || 0) >= minRating;
       const experienceMatch = doctor.experienceYears >= experienceYears;
       return feeMatch && ratingMatch && experienceMatch;
@@ -83,21 +94,26 @@ export default function DoctorList() {
     setDoctors(filteredDoctors);
   };
 
-  const sortDoctors = (doctorList: Doctor[], sortOption: SortOption): Doctor[] => {
+  const sortDoctors = (
+    doctorList: Doctor[],
+    sortOption: SortOption
+  ): Doctor[] => {
     const sorted = [...doctorList];
 
     switch (sortOption) {
-      case 'rating':
+      case "rating":
         return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      case 'price_low':
+      case "price_low":
         return sorted.sort((a, b) => a.consultationFee - b.consultationFee);
-      case 'price_high':
+      case "price_high":
         return sorted.sort((a, b) => b.consultationFee - a.consultationFee);
-      case 'experience':
+      case "experience":
         return sorted.sort((a, b) => b.experienceYears - a.experienceYears);
-      case 'availability':
+      case "availability":
         // Mock availability sorting - in real app would check actual availability
-        return sorted.sort((a, b) => a.user.firstName.localeCompare(b.user.firstName));
+        return sorted.sort((a, b) =>
+          a.user.firstName.localeCompare(b.user.firstName)
+        );
       default:
         return sorted;
     }
@@ -118,30 +134,36 @@ export default function DoctorList() {
   };
 
   const handleClearFilters = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setSelectedSpecialty(null);
     setMinFee(0);
     setMaxFee(10000);
     setMinRating(0);
     setExperienceYears(0);
-    setSortBy('rating');
+    setSortBy("rating");
     setDoctors(mockDoctors);
   };
 
   const clearFilters = () => {
-    setSearchQuery('');
+    setSearchQuery("");
     setSelectedSpecialty(null);
     setDoctors(mockDoctors);
   };
 
   const getSortDisplayName = (option: SortOption): string => {
     switch (option) {
-      case 'rating': return 'คะแนนสูงสุด';
-      case 'price_low': return 'ราคาต่ำสุด';
-      case 'price_high': return 'ราคาสูงสุด';
-      case 'experience': return 'ประสบการณ์สูงสุด';
-      case 'availability': return 'ว่างเร็วสุด';
-      default: return 'คะแนนสูงสุด';
+      case "rating":
+        return "คะแนนสูงสุด";
+      case "price_low":
+        return "ราคาต่ำสุด";
+      case "price_high":
+        return "ราคาสูงสุด";
+      case "experience":
+        return "ประสบการณ์สูงสุด";
+      case "availability":
+        return "ว่างเร็วสุด";
+      default:
+        return "คะแนนสูงสุด";
     }
   };
 
@@ -175,25 +197,27 @@ export default function DoctorList() {
               เรียงตาม: {getSortDisplayName(sortBy)}
             </Text>
             <View className="flex-row space-x-2">
-              {(['rating', 'price_low', 'experience'] as SortOption[]).map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  onPress={() => handleSort(option)}
-                  className={`px-3 py-1 rounded-full border ${
-                    sortBy === option
-                      ? 'bg-primary-600 border-primary-600'
-                      : 'bg-white border-secondary-200'
-                  }`}
-                >
-                  <Text
-                    className={`text-xs font-rubik-medium ${
-                      sortBy === option ? 'text-white' : 'text-secondary-600'
+              {(["rating", "price_low", "experience"] as SortOption[]).map(
+                (option) => (
+                  <TouchableOpacity
+                    key={option}
+                    onPress={() => handleSort(option)}
+                    className={`px-3 py-1 rounded-full border ${
+                      sortBy === option
+                        ? "bg-primary-600 border-primary-600"
+                        : "bg-white border-secondary-200"
                     }`}
                   >
-                    {getSortDisplayName(option)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Text
+                      className={`text-xs font-rubik-medium ${
+                        sortBy === option ? "text-white" : "text-secondary-600"
+                      }`}
+                    >
+                      {getSortDisplayName(option)}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              )}
             </View>
           </View>
 
@@ -208,13 +232,15 @@ export default function DoctorList() {
               onPress={() => handleSpecialtySelect(null)}
               className={`px-4 py-2 rounded-full border mr-3 ${
                 selectedSpecialty === null
-                  ? 'bg-primary-600 border-primary-600'
-                  : 'bg-white border-secondary-200'
+                  ? "bg-primary-600 border-primary-600"
+                  : "bg-white border-secondary-200"
               }`}
             >
               <Text
                 className={`text-sm font-rubik-medium ${
-                  selectedSpecialty === null ? 'text-white' : 'text-text-primary'
+                  selectedSpecialty === null
+                    ? "text-white"
+                    : "text-text-primary"
                 }`}
               >
                 ทั้งหมด ({mockDoctors.length})
@@ -241,7 +267,12 @@ export default function DoctorList() {
             <Text className="text-lg font-rubik-semiBold text-text-primary">
               ผลการค้นหา ({doctors.length} คน)
             </Text>
-            {(searchQuery || selectedSpecialty || minFee > 0 || maxFee < 10000 || minRating > 0 || experienceYears > 0) && (
+            {(searchQuery ||
+              selectedSpecialty ||
+              minFee > 0 ||
+              maxFee < 10000 ||
+              minRating > 0 ||
+              experienceYears > 0) && (
               <TouchableOpacity onPress={clearFilters}>
                 <Text className="text-sm font-rubik-medium text-primary-600">
                   ล้างตัวกรอง
@@ -361,7 +392,7 @@ export default function DoctorList() {
                 onPress={() => handleDoctorPress(doctor.id)}
               />
             ))
-          ) : (searchQuery || selectedSpecialty) ? (
+          ) : searchQuery || selectedSpecialty ? (
             <EmptyState
               icon={icons.search}
               title="ไม่พบแพทย์ที่ตรงกับเงื่อนไข"
@@ -377,7 +408,7 @@ export default function DoctorList() {
       <FilterSheet
         isVisible={showFilterSheet}
         onClose={() => setShowFilterSheet(false)}
-        selectedSpecialty={selectedSpecialty || ''}
+        selectedSpecialty={selectedSpecialty || ""}
         onSpecialtySelect={(specialty) => setSelectedSpecialty(specialty)}
         minFee={minFee}
         maxFee={maxFee}

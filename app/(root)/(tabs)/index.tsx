@@ -4,20 +4,36 @@ import { Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card } from '@/components/ui';
+import { Card, LoadingSpinner } from '@/components/ui';
 import { DoctorCard, AppointmentCard } from '@/components/Cards';
-import { getFeaturedDoctors, getAppointmentsByPatient } from '@/constants/mockMedicalData';
+import { useDoctors } from '@/services/medical/hooks';
+import { useMyAppointments } from '@/services/appointments/hooks';
+import { Appointment, Doctor, AppointmentStatus } from '@/types/medical';
 import icons from "@/constants/icons";
 import images from "@/constants/images";
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  // Get featured doctors and user's appointments
-  const featuredDoctors = getFeaturedDoctors();
-  const upcomingAppointments = getAppointmentsByPatient('pat-001')
-    .filter(apt => apt.status === 'CONFIRMED' || apt.status === 'PENDING')
-    .slice(0, 2);
+  // API Queries
+  const { data: doctorsResponse, isLoading: doctorsLoading } = useDoctors();
+  const { data: allAppointments, isLoading: appointmentsLoading } = useMyAppointments();
+
+  // Get featured doctors
+  const featuredDoctors = doctorsResponse?.doctors?.slice(0, 5) || [];
+
+  // Get upcoming appointments (filter for PENDING and CONFIRMED status, future dates)
+  const upcomingAppointments = allAppointments ?
+    allAppointments
+      .filter(apt => {
+        const isUpcoming = new Date(apt.appointmentDateTime) > new Date();
+        const validStatus = apt.status === AppointmentStatus.PENDING ||
+                           apt.status === AppointmentStatus.CONFIRMED;
+        return isUpcoming && validStatus;
+      })
+      .slice(0, 2) : [];
+
+  const isLoading = doctorsLoading || appointmentsLoading;
 
   const handleBookAppointment = () => {
     router.push('/book-appointment');
@@ -38,6 +54,15 @@ export default function Dashboard() {
   const handleAppointmentPress = (appointmentId: string) => {
     router.push(`/(root)/appointments/${appointmentId}`);
   };
+
+  // Loading state
+  if (isLoading && !featuredDoctors.length && !upcomingAppointments.length) {
+    return (
+      <SafeAreaView className="bg-white h-full">
+        <LoadingSpinner message="กำลังโหลดข้อมูล..." />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="bg-white h-full">
@@ -119,7 +144,7 @@ export default function Dashboard() {
           </View>
 
           {upcomingAppointments.length > 0 ? (
-            upcomingAppointments.map((appointment) => (
+            upcomingAppointments.map((appointment: Appointment) => (
               <AppointmentCard
                 key={appointment.id}
                 appointment={appointment}
@@ -163,7 +188,7 @@ export default function Dashboard() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={{ paddingHorizontal: 20 }}
           >
-            {featuredDoctors.map((doctor) => (
+            {featuredDoctors.map((doctor: Doctor) => (
               <DoctorCard
                 key={doctor.id}
                 doctor={doctor}
