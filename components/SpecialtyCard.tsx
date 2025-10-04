@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Specialty } from '@/types/medical';
 
 interface SpecialtyCardProps {
@@ -10,25 +11,25 @@ interface SpecialtyCardProps {
   variant?: 'grid' | 'chip';
 }
 
-const specialtyIcons: { [key: string]: string } = {
-  'Internal Medicine': '🩺',
-  'อายุรกรรม': '🩺',
-  'Surgery': '🔪',
-  'ศัลยกรรม': '🔪',
-  'Pediatrics': '👶',
-  'กุมารเวชกรรม': '👶',
-  'Cardiology': '❤️',
-  'โรคหัวใจ': '❤️',
-  'Emergency Medicine': '🚑',
-  'แพทย์ฉุกเฉิน': '🚑',
-  'Dermatology': '🧴',
-  'โรคผิวหนัง': '🧴',
-  'Orthopedics': '🦴',
-  'กระดูกและข้อ': '🦴',
-  'Neurology': '🧠',
-  'โรคระบบประสาท': '🧠',
-  'Psychiatry': '🧘',
-  'จิตเวชกรรม': '🧘'
+const specialtyIcons: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+  'Internal Medicine': 'medical',
+  'อายุรกรรม': 'medical',
+  'Surgery': 'cut',
+  'ศัลยกรรม': 'cut',
+  'Pediatrics': 'happy',
+  'กุมารเวชกรรม': 'happy',
+  'Cardiology': 'heart',
+  'โรคหัวใจ': 'heart',
+  'Emergency Medicine': 'car',
+  'แพทย์ฉุกเฉิน': 'car',
+  'Dermatology': 'water',
+  'โรคผิวหนัง': 'water',
+  'Orthopedics': 'fitness',
+  'กระดูกและข้อ': 'fitness',
+  'Neurology': 'body',
+  'โรคระบบประสาท': 'body',
+  'Psychiatry': 'leaf',
+  'จิตเวชกรรม': 'leaf'
 };
 
 export const SpecialtyCard: React.FC<SpecialtyCardProps> = ({
@@ -38,7 +39,7 @@ export const SpecialtyCard: React.FC<SpecialtyCardProps> = ({
   doctorCount,
   variant = 'grid'
 }) => {
-  const icon = specialtyIcons[specialty.name] || '🏥';
+  const iconName = specialtyIcons[specialty.name] || 'medical-outline';
 
   if (variant === 'chip') {
     return (
@@ -90,7 +91,11 @@ export const SpecialtyCard: React.FC<SpecialtyCardProps> = ({
             selected ? 'bg-primary-600' : 'bg-primary-50'
           }`}
         >
-          <Text className="text-xl">{icon}</Text>
+          <Ionicons
+            name={iconName}
+            size={24}
+            color={selected ? '#FFFFFF' : '#0066CC'}
+          />
         </View>
 
         {/* Specialty Info */}
@@ -132,7 +137,7 @@ export const SpecialtyCard: React.FC<SpecialtyCardProps> = ({
         {/* Selection Indicator */}
         {selected && (
           <View className="w-6 h-6 bg-primary-600 rounded-full items-center justify-center">
-            <Text className="text-white text-xs font-bold">✓</Text>
+            <Ionicons name="checkmark" size={14} color="white" />
           </View>
         )}
       </View>

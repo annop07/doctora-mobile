@@ -13,9 +13,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "@/contexts/AuthContext";
-import { AppointmentCard } from "@/components/Cards";
-import { getAppointmentsByPatient } from "@/constants/mockMedicalData";
-import { AppointmentStatus } from "@/types/medical";
 
 interface SettingsItemProps {
   icon: ImageSourcePropType;
@@ -53,19 +50,9 @@ const SettingItem = ({
 const Profile = () => {
   const { user, logout } = useAuth();
 
-  // Get user's appointments
-  const userAppointments = getAppointmentsByPatient("pat-001");
-  const recentAppointments = userAppointments.slice(0, 3);
-
-  // Calculate stats
-  const upcomingCount = userAppointments.filter(
-    (apt) =>
-      apt.status === AppointmentStatus.CONFIRMED ||
-      apt.status === AppointmentStatus.PENDING
-  ).length;
-  const completedCount = userAppointments.filter(
-    (apt) => apt.status === AppointmentStatus.COMPLETED
-  ).length;
+  // Mock stats for display
+  const upcomingCount = 2;
+  const completedCount = 5;
 
   const handleLogout = async () => {
     await logout();
@@ -75,9 +62,6 @@ const Profile = () => {
     router.push("/appointments");
   };
 
-  const handleAppointmentPress = (appointmentId: string) => {
-    router.push(`/(root)/appointments/${appointmentId}`);
-  };
 
   return (
     <SafeAreaView className="bg-background-secondary h-full">
@@ -143,37 +127,6 @@ const Profile = () => {
           </View>
         </View>
 
-        {/* Recent Appointments */}
-        <View className="bg-white mb-4">
-          <View className="flex flex-row items-center justify-between px-5 py-4 border-b border-secondary-100">
-            <Text className="text-lg font-rubik-semiBold text-text-primary">
-              นัดหมายล่าสุด
-            </Text>
-            <TouchableOpacity onPress={handleViewAllAppointments}>
-              <Text className="text-sm font-rubik-medium text-primary-600">
-                ดูทั้งหมด
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {recentAppointments.length > 0 ? (
-            <View className="px-5 py-2">
-              {recentAppointments.map((appointment) => (
-                <AppointmentCard
-                  key={appointment.id}
-                  appointment={appointment}
-                  onPress={() => handleAppointmentPress(appointment.id)}
-                />
-              ))}
-            </View>
-          ) : (
-            <View className="px-5 py-8 items-center">
-              <Text className="text-base font-rubik text-secondary-600">
-                ยังไม่มีนัดหมาย
-              </Text>
-            </View>
-          )}
-        </View>
 
         {/* Quick Actions */}
         <View className="bg-white mb-4">

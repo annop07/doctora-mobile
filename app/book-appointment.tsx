@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Button, Card, Input } from '@/components/ui';
@@ -195,9 +196,12 @@ export default function BookAppointment() {
     <ScrollView showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View className="px-5 py-6">
-        <Text className="text-2xl font-rubik-bold text-text-primary text-center mb-2">
-          🤖 ระบบแนะนำแพทย์อัตโนมัติ
-        </Text>
+        <View className="flex-row items-center justify-center mb-2">
+          <Ionicons name="medical" size={28} color="#0066CC" style={{ marginRight: 8 }} />
+          <Text className="text-2xl font-rubik-bold text-text-primary text-center">
+            ระบบแนะนำแพทย์อัตโนมัติ
+          </Text>
+        </View>
         <Text className="text-base font-rubik text-secondary-600 text-center leading-6">
           AI จะวิเคราะห์อาการและแนะนำแพทย์ที่เหมาะสมที่สุดสำหรับคุณ
         </Text>
@@ -318,9 +322,17 @@ export default function BookAppointment() {
     <ScrollView showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View className="px-5 py-6">
-        <Text className="text-2xl font-rubik-bold text-text-primary text-center mb-2">
-          {useRecommendation ? 'แพทย์ที่แนะนำโดย AI' : 'แพทย์ในแผนกที่เลือก'}
-        </Text>
+        <View className="flex-row items-center justify-center mb-2">
+          <Ionicons
+            name={useRecommendation ? 'bulb' : 'people'}
+            size={28}
+            color="#0066CC"
+            style={{ marginRight: 8 }}
+          />
+          <Text className="text-2xl font-rubik-bold text-text-primary text-center">
+            {useRecommendation ? 'แพทย์ที่แนะนำโดย AI' : 'แพทย์ในแผนกที่เลือก'}
+          </Text>
+        </View>
         <Text className="text-base font-rubik text-secondary-600 text-center">
           {useRecommendation
             ? 'ระบบ AI ได้วิเคราะห์และคัดเลือกแพทย์ที่เหมาะสมกับอาการของคุณแล้ว'
@@ -344,9 +356,17 @@ export default function BookAppointment() {
       <View className="px-5 mb-6">
         <View className="flex-row items-center justify-between p-4 bg-primary-50 rounded-xl">
           <View className="flex-1">
-            <Text className="text-sm font-rubik-semiBold text-primary-700">
-              {useRecommendation ? '🤖 ระบบแนะนำ AI' : '📋 ดูทั้งหมด'}
-            </Text>
+            <View className="flex-row items-center">
+              <Ionicons
+                name={useRecommendation ? 'bulb' : 'list'}
+                size={16}
+                color="#1D4ED8"
+                style={{ marginRight: 6 }}
+              />
+              <Text className="text-sm font-rubik-semiBold text-primary-700">
+                {useRecommendation ? 'ระบบแนะนำ AI' : 'ดูทั้งหมด'}
+              </Text>
+            </View>
             <Text className="text-xs font-rubik text-primary-600 mt-1">
               {useRecommendation
                 ? 'วิเคราะห์ตามอาการและให้คะแนนความเหมาะสม'
@@ -356,10 +376,16 @@ export default function BookAppointment() {
           </View>
           <TouchableOpacity
             onPress={handleToggleRecommendation}
-            className={`px-3 py-2 rounded-lg ${
+            className={`px-3 py-2 rounded-lg flex-row items-center ${
               useRecommendation ? 'bg-primary-600' : 'bg-secondary-400'
             }`}
           >
+            <Ionicons
+              name={useRecommendation ? 'checkmark-circle' : 'close-circle'}
+              size={14}
+              color="white"
+              style={{ marginRight: 4 }}
+            />
             <Text className="text-xs font-rubik-semiBold text-white">
               {useRecommendation ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
             </Text>
@@ -388,18 +414,20 @@ export default function BookAppointment() {
             <View key={doctor.id} className="mb-4 relative">
               {/* Recommended Badge for AI recommendations */}
               {useRecommendation && index === 0 && (
-                <View className="absolute -top-2 -right-2 bg-success-500 px-3 py-1 rounded-full z-10">
+                <View className="absolute -top-2 -right-2 bg-success-500 px-3 py-1 rounded-full z-10 flex-row items-center">
+                  <Ionicons name="star" size={12} color="white" style={{ marginRight: 4 }} />
                   <Text className="text-xs font-rubik-semiBold text-white">
-                    🤖 AI แนะนำ
+                    AI แนะนำ
                   </Text>
                 </View>
               )}
 
               {/* Score Badge for AI recommendations */}
               {useRecommendation && recommendedDoctors?.message && index < 3 && (
-                <View className="absolute -top-2 -left-2 bg-primary-600 px-2 py-1 rounded-full z-10">
+                <View className="absolute -top-2 -left-2 bg-primary-600 px-2 py-1 rounded-full z-10 flex-row items-center">
+                  <Ionicons name="trophy" size={10} color="white" style={{ marginRight: 2 }} />
                   <Text className="text-xs font-rubik-semiBold text-white">
-                    #{index + 1}
+                    {index + 1}
                   </Text>
                 </View>
               )}
@@ -425,8 +453,9 @@ export default function BookAppointment() {
             {useRecommendation && (
               <TouchableOpacity
                 onPress={handleToggleRecommendation}
-                className="bg-primary-600 px-4 py-2 rounded-lg"
+                className="bg-primary-600 px-4 py-2 rounded-lg flex-row items-center justify-center"
               >
+                <Ionicons name="list" size={16} color="white" style={{ marginRight: 6 }} />
                 <Text className="text-white font-rubik-medium">
                   ดูแพทย์ทั้งหมดในแผนก
                 </Text>
