@@ -20,6 +20,7 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
     const doctorName = doctor.name || `${doctor.firstName} ${doctor.lastName}`;
     const rating = doctor.rating || 0;
     const reviewCount = doctor.totalRatings || 0;
+    const fee = doctor.consultationFee ? doctor.consultationFee.toLocaleString('th-TH') : '0';
 
     if (variant === 'featured') {
         return (
@@ -54,7 +55,7 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
 
                     <View className='flex flex-row items-center justify-between w-full mt-2'>
                         <Text className='text-xl font-rubik-extraBold text-white'>
-                            ฿{doctor.consultationFee}
+                            ฿{fee}
                         </Text>
                         <View className='bg-white/20 p-2 rounded-full'>
                             <Text className='text-white text-xs'>💉</Text>
@@ -109,7 +110,7 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
                     {/* Price & Reviews */}
                     <View className='flex flex-row items-center justify-between mt-3'>
                         <Text className='text-lg font-rubik-bold text-primary-600'>
-                            ฿{doctor.consultationFee}
+                            ฿{fee}
                         </Text>
                         <Text className='text-xs font-rubik text-secondary-500'>
                             {reviewCount} รีวิว
@@ -133,6 +134,10 @@ export const AppointmentCard = ({ appointment, onPress, showActions = false, onC
         hour: '2-digit',
         minute: '2-digit'
     });
+    // Backend might not send consultationFee in appointment.doctor object, show '-' if not available
+    const fee = appointment.doctor.consultationFee && appointment.doctor.consultationFee > 0
+        ? appointment.doctor.consultationFee.toLocaleString('th-TH')
+        : '-';
 
     const getStatusColor = (status: AppointmentStatus) => {
         switch (status) {
@@ -237,7 +242,7 @@ export const AppointmentCard = ({ appointment, onPress, showActions = false, onC
                 {/* Price */}
                 <View className='items-end justify-center'>
                     <Text className='text-base font-rubik-bold text-primary-600'>
-                        ฿{appointment.doctor.consultationFee}
+                        ฿{fee}
                     </Text>
                 </View>
             </View>

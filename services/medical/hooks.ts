@@ -2,6 +2,7 @@ import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tansta
 import { doctorService } from '../doctors';
 import { specialtyService } from '../specialties';
 import { appointmentService } from '../appointments';
+import { availabilityService } from '../availability';
 import { queryKeys, queryOptions } from '@/config/queryClient';
 import type {
   Doctor,
@@ -43,6 +44,11 @@ export const QUERY_KEYS = {
   appointmentHistory: ['appointments', 'history'] as const,
   upcomingAppointments: ['appointments', 'upcoming'] as const,
   todayAppointments: ['appointments', 'today'] as const,
+
+  // Availability keys
+  availability: (doctorId: string) => ['availability', doctorId] as const,
+  availabilityByDay: (doctorId: string, day: number) => ['availability', doctorId, day] as const,
+  timeSlots: (doctorId: string, date: string) => ['availability', 'slots', doctorId, date] as const,
 } as const;
 
 // ============= DOCTOR HOOKS =============
@@ -492,5 +498,54 @@ export const useRecommendDoctors = () => {
         [{ text: 'ตกลง' }]
       );
     },
+  });
+};
+// ============= AVAILABILITY HOOKS =============
+
+/**
+ * Hook for fetching doctor availability schedule
+ */
+export const useDoctorAvailability = (doctorId: string, enabled: boolean = true) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.availability(doctorId),
+    queryFn: () => availabilityService.getDoctorAvailabilities(doctorId),
+    enabled: enabled && !!doctorId,
+    staleTime: 30 * 60 * 1000, // 30 minutes - schedules don't change often
+    gcTime: 60 * 60 * 1000, // 1 hour
+  });
+};
+
+/**
+ * Hook for fetching doctor availability for specific day
+ */
+export const useDoctorAvailabilityByDay = (
+  doctorId: string,
+  dayOfWeek: number,
+  enabled: boolean = true
+) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.availabilityByDay(doctorId, dayOfWeek),
+    queryFn: () => availabilityService.getDoctorAvailabilitiesByDay(doctorId, dayOfWeek),
+    enabled: enabled && !!doctorId && dayOfWeek >= 1 && dayOfWeek <= 7,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+  });
+};
+
+/**
+ * Hook for fetching available time slots for a specific date
+ */
+export const useAvailableTimeSlots = (
+  doctorId: string,
+  date: string,
+  enabled: boolean = true
+) => {
+  return useQuery({
+    queryKey: QUERY_KEYS.timeSlots(doctorId, date),
+    queryFn: () => availabilityService.getAvailableTimeSlots(doctorId, date),
+    enabled: enabled && !!doctorId && !!date,
+    staleTime: 2 * 60 * 1000, // 2 minutes - time slots change frequently
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true, // Refetch when app becomes active
   });
 };

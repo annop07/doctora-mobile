@@ -1,5 +1,5 @@
 import { apiClient } from './api/client';
-import { Appointment, BookAppointmentRequest, AppointmentStatus } from '@/types/medical';
+import { Appointment, BookAppointmentRequest, AppointmentStatus, Doctor } from '@/types/medical';
 
 export interface AppointmentsResponse {
   appointments: Appointment[];
@@ -12,6 +12,48 @@ export interface BookAppointmentResponse {
 }
 
 class AppointmentService {
+  /**
+   * Transform backend doctor data to frontend format
+   */
+  private transformDoctor(doctor: any): Doctor {
+    if (!doctor) return {} as Doctor;
+
+    return {
+      ...doctor,
+      id: doctor.id?.toString() || '',
+      name: doctor.doctorName || doctor.name || '',
+      firstName: doctor.firstName || doctor.doctorName?.split(' ')[0] || '',
+      lastName: doctor.lastName || doctor.doctorName?.split(' ').slice(1).join(' ') || '',
+      consultationFee: doctor.consultationFee || 0,
+      experienceYears: doctor.experienceYears || 0,
+      specialty: {
+        id: doctor.specialty?.id?.toString() || '',
+        name: doctor.specialty?.name || '',
+        description: doctor.specialty?.description || '',
+        createdAt: doctor.specialty?.createdAt || new Date().toISOString()
+      },
+      createdAt: doctor.createdAt || new Date().toISOString()
+    };
+  }
+
+  /**
+   * Transform backend appointment data to frontend format
+   */
+  private transformAppointment(appointment: any): Appointment {
+    return {
+      ...appointment,
+      id: appointment.id?.toString() || '',
+      appointmentDateTime: appointment.appointmentDatetime || appointment.appointmentDateTime || '',
+      doctor: this.transformDoctor(appointment.doctor),
+      patient: appointment.patient ? {
+        id: appointment.patient.id?.toString() || '',
+        firstName: appointment.patient.firstName || '',
+        lastName: appointment.patient.lastName || '',
+        email: appointment.patient.email || '',
+        phone: appointment.patient.phone
+      } : undefined
+    };
+  }
   /**
    * จองนัดหมายกับแพทย์
    * POST /api/appointments
@@ -32,8 +74,8 @@ class AppointmentService {
    * GET /api/appointments/my
    */
   async getMyAppointments(): Promise<Appointment[]> {
-    const response = await apiClient.get<AppointmentsResponse>('/appointments/my');
-    return response.appointments;
+    const response = await apiClient.get<{appointments: any[]}>('/appointments/my');
+    return response.appointments?.map((a: any) => this.transformAppointment(a)) || [];
   }
 
   /**
@@ -50,8 +92,8 @@ class AppointmentService {
    * GET /api/appointments/my-patients
    */
   async getDoctorAppointments(): Promise<Appointment[]> {
-    const response = await apiClient.get<AppointmentsResponse>('/appointments/my-patients');
-    return response.appointments;
+    const response = await apiClient.get<{appointments: any[]}>('/appointments/my-patients');
+    return response.appointments?.map((a: any) => this.transformAppointment(a)) || [];
   }
 
   /**

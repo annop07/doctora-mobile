@@ -11,50 +11,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button, Card, LoadingSpinner, ErrorStates } from "@/components/ui";
-import { useDoctor } from "@/services/medical/hooks";
+import { useDoctor, useDoctorAvailability } from "@/services/medical/hooks";
 import { Availability } from "@/types";
 import icons from "@/constants/icons";
 import images from "@/constants/images";
-
-// Mock availability data
-const mockAvailability: Availability[] = [
-  {
-    id: "av-1",
-    doctorId: "1",
-    dayOfWeek: 1, // Monday
-    startTime: "09:00",
-    endTime: "12:00",
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "av-2",
-    doctorId: "1",
-    dayOfWeek: 1, // Monday
-    startTime: "14:00",
-    endTime: "17:00",
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "av-3",
-    doctorId: "1",
-    dayOfWeek: 3, // Wednesday
-    startTime: "09:00",
-    endTime: "12:00",
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "av-4",
-    doctorId: "1",
-    dayOfWeek: 5, // Friday
-    startTime: "09:00",
-    endTime: "12:00",
-    isActive: true,
-    createdAt: "2024-01-01T00:00:00Z",
-  },
-];
 
 const dayNames = {
   1: "จันทร์",
@@ -75,6 +35,9 @@ export default function DoctorDetail() {
 
   // Fetch doctor data from API
   const { data: doctor, isLoading, error, refetch } = useDoctor(id as string);
+
+  // Fetch doctor availability schedule from API
+  const { data: availabilities, isLoading: availabilityLoading } = useDoctorAvailability(id as string);
 
   // Loading state
   if (isLoading) {
@@ -100,9 +63,9 @@ export default function DoctorDetail() {
   }
 
   const doctorName = doctor.name || `${doctor.firstName} ${doctor.lastName}`;
-  const doctorAvailability = mockAvailability.filter(
-    (av) => av.doctorId === doctor.id
-  );
+
+  // Use real availability data from API
+  const doctorAvailability = availabilities || [];
 
   // Mock statistics for now (will be replaced with real API data later)
   const completedAppointments = 25; // Mock data
@@ -208,19 +171,23 @@ export default function DoctorDetail() {
         ตารางเวลาทำการ
       </Text>
 
-      {doctorAvailability.length > 0 ? (
+      {availabilityLoading ? (
+        <View className="py-8">
+          <LoadingSpinner message="กำลังโหลดตารางเวลา..." />
+        </View>
+      ) : doctorAvailability.length > 0 ? (
         <View className="space-y-3">
-          {doctorAvailability.map((availability) => (
-            <Card key={availability.id} variant="outlined" padding="md">
+          {doctorAvailability.map((schedule, index) => (
+            <Card key={`${schedule.dayOfWeek}-${index}`} variant="outlined" padding="md">
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center">
                   <View className="w-3 h-3 bg-success-500 rounded-full mr-3" />
                   <Text className="text-base font-rubik-semiBold text-text-primary">
-                    {dayNames[availability.dayOfWeek as keyof typeof dayNames]}
+                    {dayNames[schedule.dayOfWeek as keyof typeof dayNames] || schedule.dayName}
                   </Text>
                 </View>
                 <Text className="text-base font-rubik text-secondary-600">
-                  {availability.startTime} - {availability.endTime}
+                  {schedule.timeRange || `${schedule.startTime} - ${schedule.endTime}`}
                 </Text>
               </View>
             </Card>

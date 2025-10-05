@@ -3,7 +3,7 @@ import { storageService } from '@/utils/storage';
 import { ApiError, ApiResponse } from '@/types';
 
 // Base API URL - ใช้ localhost สำหรับ development
-const BASE_URL = 'http://localhost:8083/api'; // Local development
+const BASE_URL = 'http://localhost:8082/api'; // Local development
 
 class ApiClient {
   private client: AxiosInstance;
