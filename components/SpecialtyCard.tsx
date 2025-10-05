@@ -94,7 +94,7 @@ export const SpecialtyCard: React.FC<SpecialtyCardProps> = ({
           <Ionicons
             name={iconName}
             size={24}
-            color={selected ? '#FFFFFF' : '#0066CC'}
+            color={selected ? '#FFFFFF' : '#0891b2'}
           />
         </View>
 

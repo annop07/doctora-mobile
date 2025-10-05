@@ -227,8 +227,7 @@ export default function Appointments() {
                 key={appointment.id}
                 appointment={appointment}
                 onPress={() => handleAppointmentPress(appointment.id)}
-                showActions={true}
-                onCancel={handleCancelAppointment}
+                showActions={false}
               />
             ))
           ) : (

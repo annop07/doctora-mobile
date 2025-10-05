@@ -303,7 +303,7 @@ export default function BookAppointment() {
       {/* Header */}
       <View className="px-5 py-6">
         <View className="flex-row items-center justify-center mb-2">
-          <Ionicons name="medical" size={28} color="#0066CC" style={{ marginRight: 8 }} />
+          <Ionicons name="medical" size={28} color="#0891b2" style={{ marginRight: 8 }} />
           <Text className="text-2xl font-rubik-bold text-text-primary text-center">
             ระบบแนะนำแพทย์อัตโนมัติ
           </Text>
@@ -332,7 +332,7 @@ export default function BookAppointment() {
 
         {specialtiesLoading ? (
           <View className="items-center py-8">
-            <ActivityIndicator size="large" color="#0066CC" />
+            <ActivityIndicator size="large" color="#0891b2" />
             <Text className="text-base font-rubik text-secondary-600 mt-4">
               กำลังโหลดแผนก...
             </Text>
@@ -413,6 +413,7 @@ export default function BookAppointment() {
           disabled={selectedSpecialtyIds.length === 0 || !selectedDate || specialtiesLoading}
           variant="primary"
           size="lg"
+          style={{ backgroundColor: '#0891b2' }}
         />
 
         <TouchableOpacity onPress={handleManualSelection} className="mt-4">
@@ -432,7 +433,7 @@ export default function BookAppointment() {
           <Ionicons
             name={useRecommendation ? 'bulb' : 'people'}
             size={28}
-            color="#0066CC"
+            color="#0891b2"
             style={{ marginRight: 8 }}
           />
           <Text className="text-2xl font-rubik-bold text-text-primary text-center">
@@ -466,7 +467,7 @@ export default function BookAppointment() {
               <Ionicons
                 name={useRecommendation ? 'bulb' : 'list'}
                 size={16}
-                color="#1D4ED8"
+                color="#0891b2"
                 style={{ marginRight: 6 }}
               />
               <Text className="text-sm font-rubik-semiBold text-primary-700">
@@ -503,7 +504,7 @@ export default function BookAppointment() {
       <View className="px-5">
         {doctorsLoading ? (
           <View className="items-center py-8">
-            <ActivityIndicator size="large" color="#0066CC" />
+            <ActivityIndicator size="large" color="#0891b2" />
             <Text className="text-base font-rubik text-secondary-600 mt-4">
               กำลังค้นหาแพทย์...
             </Text>

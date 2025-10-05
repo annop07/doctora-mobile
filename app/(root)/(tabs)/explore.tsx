@@ -23,7 +23,10 @@ export default function Explore() {
 
   // Build search filters
   const searchFilters = useMemo<DoctorSearchFilters>(() => {
-    const filters: DoctorSearchFilters = {};
+    const filters: DoctorSearchFilters & { page?: number; size?: number } = {
+      page: 0,
+      size: 100, // ดึงข้อมูลสูงสุด 100 คน (เพิ่มจาก default 10)
+    };
 
     if (debouncedSearchQuery.trim()) {
       filters.query = debouncedSearchQuery.trim();

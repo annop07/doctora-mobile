@@ -338,9 +338,17 @@ export default function PatientFormPage() {
                 title="ต่อไป"
                 variant="primary"
                 size="lg"
-                onPress={handleNext}
-                disabled={!formData.consentGiven}
-                style={{ flex: 1 }}
+                onPress={() => {
+                  if (formData.consentGiven) {
+                    handleNext();
+                  } else {
+                    Alert.alert('กรุณายินยอม', 'กรุณายินยอมให้เก็บข้อมูลส่วนตัวก่อนดำเนินการต่อ');
+                  }
+                }}
+                style={{
+                  flex: 1,
+                  opacity: formData.consentGiven ? 1 : 0.5
+                }}
               />
             </View>
           </View>

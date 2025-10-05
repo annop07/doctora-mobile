@@ -40,10 +40,10 @@ const Button: React.FC<ButtonProps> = ({
 
   // Variant styles
   const variantStyles = {
-    primary: `bg-primary-600 ${isDisabled ? 'opacity-50' : 'active:bg-primary-700'}`,
-    secondary: `bg-secondary-100 ${isDisabled ? 'opacity-50' : 'active:bg-secondary-200'}`,
-    outline: `border-2 border-primary-600 bg-transparent ${isDisabled ? 'opacity-50' : 'active:bg-primary-50'}`,
-    ghost: `bg-transparent ${isDisabled ? 'opacity-50' : 'active:bg-secondary-100'}`,
+    primary: `bg-primary-600 ${!isDisabled && 'active:bg-primary-700'}`,
+    secondary: `bg-secondary-100 ${!isDisabled && 'active:bg-secondary-200'}`,
+    outline: `border-2 border-primary-600 bg-transparent ${!isDisabled && 'active:bg-primary-50'}`,
+    ghost: `bg-transparent ${!isDisabled && 'active:bg-secondary-100'}`,
   };
 
   // Size styles
@@ -71,12 +71,21 @@ const Button: React.FC<ButtonProps> = ({
   const buttonClasses = `${baseButtonStyle} ${variantStyles[variant]} ${sizeStyles[size]}`;
   const textClasses = `${textVariantStyles[variant]} ${textSizeStyles[size]}`;
 
+  // Merge default opacity with custom style
+  // If style has opacity, use it. Otherwise use default.
+  const defaultOpacity = isDisabled ? 0.7 : 1;
+  const finalOpacity = style && 'opacity' in style ? style.opacity : defaultOpacity;
+  const mergedStyle = {
+    ...style,
+    opacity: finalOpacity,
+  };
+
   return (
     <TouchableOpacity
       className={buttonClasses}
       disabled={isDisabled}
       onPress={onPress}
-      style={style}
+      style={mergedStyle}
       activeOpacity={0.8}
       {...props}
     >
