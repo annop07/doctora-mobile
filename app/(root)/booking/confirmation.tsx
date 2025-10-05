@@ -4,23 +4,43 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDoctors } from '@/services/medical/hooks';
+import { useBookAppointment } from '@/services/appointments/hooks';
 import { Button, Input } from '@/components/ui';
 import { Header, DoctorCard } from '@/components';
+import { BookAppointmentRequest, BookAppointmentWithPatientInfoRequest } from '@/types/medical';
+import { appointmentService } from '@/services/appointments';
 
 export default function BookingConfirmation() {
-  const { appointmentId, doctorId, date, time, message } = useLocalSearchParams<{
+  const params = useLocalSearchParams<{
     appointmentId?: string;
     doctorId: string;
     date: string;
     time: string;
     message?: string;
+    notes?: string;
+    // Patient data from patient-form
+    prefix?: string;
+    firstName?: string;
+    lastName?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    nationality?: string;
+    citizenId?: string;
+    phone?: string;
+    email?: string;
   }>();
 
+  const { appointmentId, doctorId, date, time, message, notes: additionalNotes } = params;
+
   const { user } = useAuth();
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(additionalNotes || '');
+  const [isBooking, setIsBooking] = useState(false);
 
   // Get doctors data
   const { data: doctorsResponse } = useDoctors({ limit: 100 });
+
+  // Booking mutation
+  const bookAppointmentMutation = useBookAppointment();
 
   // Find doctor by ID
   const doctor = useMemo(() => {
@@ -82,7 +102,14 @@ export default function BookingConfirmation() {
 
   const doctorName = doctor ? doctor.name : 'ไม่ระบุ';
   const appointmentDate = new Date(date);
-  const patientName = user ? `${user.firstName} ${user.lastName}` : 'ไม่ระบุ';
+
+  // Use patient data from form params, fallback to user data
+  const patientName = params.firstName && params.lastName
+    ? `${params.prefix || ''} ${params.firstName} ${params.lastName}`.trim()
+    : user ? `${user.firstName} ${user.lastName}` : 'ไม่ระบุ';
+
+  const patientEmail = params.email || user?.email || 'ไม่ระบุ';
+  const patientPhone = params.phone || user?.phone || 'ไม่ระบุ';
 
   // If this is a successful booking, don't show the form
   if (appointmentId && message) {
@@ -125,6 +152,110 @@ export default function BookingConfirmation() {
 
   const handleEditAppointment = () => {
     router.back();
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!doctor || !date || !time) return;
+
+    setIsBooking(true);
+
+    try {
+      // Create booking request
+      const appointmentDateTime = new Date(date);
+      const [hours, minutes] = time.split(':').map(Number);
+      appointmentDateTime.setHours(hours, minutes, 0, 0);
+
+      // Convert to local timezone format
+      const year = appointmentDateTime.getFullYear();
+      const month = String(appointmentDateTime.getMonth() + 1).padStart(2, '0');
+      const day = String(appointmentDateTime.getDate()).padStart(2, '0');
+      const hour = String(appointmentDateTime.getHours()).padStart(2, '0');
+      const minute = String(appointmentDateTime.getMinutes()).padStart(2, '0');
+      const second = String(appointmentDateTime.getSeconds()).padStart(2, '0');
+
+      const localDateTimeString = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+
+      // Check if we have patient info from patient-form
+      if (params.firstName && params.lastName) {
+        // Use with-patient-info endpoint
+        const bookingRequest: BookAppointmentWithPatientInfoRequest = {
+          doctorId: doctor.id,
+          appointmentDateTime: localDateTimeString,
+          durationMinutes: 60,
+          notes: notes || '',
+          // Patient info
+          patientPrefix: params.prefix,
+          patientFirstName: params.firstName,
+          patientLastName: params.lastName,
+          patientGender: params.gender,
+          patientDateOfBirth: params.dateOfBirth,
+          patientNationality: params.nationality,
+          patientCitizenId: params.citizenId,
+          patientPhone: params.phone,
+          patientEmail: params.email,
+          // Additional info
+          symptoms: params.notes,
+          bookingType: 'manual'
+        };
+
+        console.log('🔍 DEBUG: Booking with Patient Info:', bookingRequest);
+
+        const result = await appointmentService.bookAppointmentWithPatientInfo(bookingRequest);
+
+        Alert.alert(
+          '🎉 จองนัดหมายสำเร็จ!',
+          `หมายเลขการจอง: ${result.id}\nข้อมูลผู้ป่วยถูกบันทึกเรียบร้อยแล้ว`,
+          [
+            {
+              text: 'ดูการนัดหมาย',
+              onPress: () => router.replace('/(root)/(tabs)/appointments')
+            },
+            {
+              text: 'กลับหน้าแรก',
+              onPress: () => router.replace('/(root)/(tabs)'),
+              style: 'cancel'
+            }
+          ]
+        );
+      } else {
+        // Use regular endpoint (no patient info)
+        const bookingRequest: BookAppointmentRequest = {
+          doctorId: doctor.id,
+          appointmentDateTime: localDateTimeString,
+          durationMinutes: 60,
+          notes: notes || ''
+        };
+
+        console.log('🔍 DEBUG: Regular Booking Request:', bookingRequest);
+
+        const result = await bookAppointmentMutation.mutateAsync(bookingRequest);
+
+        Alert.alert(
+          '🎉 จองนัดหมายสำเร็จ!',
+          `หมายเลขการจอง: ${result.id}\n${result.message}`,
+          [
+            {
+              text: 'ดูการนัดหมาย',
+              onPress: () => router.replace('/(root)/(tabs)/appointments')
+            },
+            {
+              text: 'กลับหน้าแรก',
+              onPress: () => router.replace('/(root)/(tabs)'),
+              style: 'cancel'
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('❌ Booking Error:', error);
+      Alert.alert(
+        'เกิดข้อผิดพลาด',
+        error instanceof Error ? error.message : 'ไม่สามารถจองนัดหมายได้ กรุณาลองใหม่อีกครั้ง',
+        [{ text: 'ตกลง' }]
+      );
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   return (
@@ -173,28 +304,14 @@ export default function BookingConfirmation() {
 
             <View className="space-y-3">
               <View className="flex-row justify-between py-2 border-b border-secondary-100">
-                <Text className="text-sm font-rubik text-secondary-600">วันที่</Text>
+                <Text className="text-sm font-rubik text-secondary-600">วันและเวลา</Text>
                 <Text className="text-sm font-rubik-semiBold text-text-primary">
                   {appointmentDate.toLocaleDateString('th-TH', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric'
-                  })}
-                </Text>
-              </View>
-
-              <View className="flex-row justify-between py-2 border-b border-secondary-100">
-                <Text className="text-sm font-rubik text-secondary-600">เวลา</Text>
-                <Text className="text-sm font-rubik-semiBold text-text-primary">
-                  {time} น.
-                </Text>
-              </View>
-
-              <View className="flex-row justify-between py-2 border-b border-secondary-100">
-                <Text className="text-sm font-rubik text-secondary-600">ระยะเวลา</Text>
-                <Text className="text-sm font-rubik-semiBold text-text-primary">
-                  30 นาที
+                  })} {time} น.
                 </Text>
               </View>
 
@@ -231,16 +348,34 @@ export default function BookingConfirmation() {
               <View className="flex-row justify-between py-2 border-b border-secondary-100">
                 <Text className="text-sm font-rubik text-secondary-600">อีเมล</Text>
                 <Text className="text-sm font-rubik-semiBold text-text-primary">
-                  {user?.email || 'ไม่ระบุ'}
+                  {patientEmail}
                 </Text>
               </View>
 
-              <View className="flex-row justify-between py-2">
+              <View className="flex-row justify-between py-2 border-b border-secondary-100">
                 <Text className="text-sm font-rubik text-secondary-600">เบอร์โทรศัพท์</Text>
                 <Text className="text-sm font-rubik-semiBold text-text-primary">
-                  {user?.phone || 'ไม่ระบุ'}
+                  {patientPhone}
                 </Text>
               </View>
+
+              {params.gender && (
+                <View className="flex-row justify-between py-2 border-b border-secondary-100">
+                  <Text className="text-sm font-rubik text-secondary-600">เพศ</Text>
+                  <Text className="text-sm font-rubik-semiBold text-text-primary">
+                    {params.gender}
+                  </Text>
+                </View>
+              )}
+
+              {params.citizenId && (
+                <View className="flex-row justify-between py-2">
+                  <Text className="text-sm font-rubik text-secondary-600">เลขบัตรประชาชน</Text>
+                  <Text className="text-sm font-rubik-semiBold text-text-primary">
+                    {params.citizenId}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
@@ -309,17 +444,8 @@ export default function BookingConfirmation() {
       {/* Fixed Bottom Actions - Only show for non-API bookings */}
       {!appointmentId && (
         <View className="bg-white border-t border-secondary-200 p-5">
-          <View className="space-y-3">
-            <Button
-              title="กลับไป"
-              onPress={() => router.back()}
-              variant="primary"
-              size="lg"
-            />
-          </View>
-
           {/* Price Summary */}
-          <View className="mt-4 pt-4 border-t border-secondary-100">
+          <View className="mb-4">
             <View className="flex-row items-center justify-between">
               <Text className="text-base font-rubik text-secondary-600">
                 ยอดรวมทั้งสิ้น
@@ -331,6 +457,26 @@ export default function BookingConfirmation() {
             <Text className="text-xs font-rubik text-secondary-500 text-right mt-1">
               ชำระได้ที่โรงพยาบาลหรือผ่านแอป
             </Text>
+          </View>
+
+          <View className="flex-row space-x-3">
+            <Button
+              title="กลับไป"
+              onPress={() => router.back()}
+              variant="outline"
+              size="lg"
+              style={{ flex: 1 }}
+            />
+
+            <Button
+              title={isBooking ? 'กำลังจอง...' : 'ยืนยันการจอง'}
+              onPress={handleConfirmBooking}
+              variant="primary"
+              size="lg"
+              disabled={isBooking}
+              loading={isBooking}
+              style={{ flex: 2 }}
+            />
           </View>
         </View>
       )}

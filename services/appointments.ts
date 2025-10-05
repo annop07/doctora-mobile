@@ -1,5 +1,5 @@
 import { apiClient } from './api/client';
-import { Appointment, BookAppointmentRequest, AppointmentStatus, Doctor } from '@/types/medical';
+import { Appointment, BookAppointmentRequest, BookAppointmentWithPatientInfoRequest, AppointmentStatus, Doctor } from '@/types/medical';
 
 export interface AppointmentsResponse {
   appointments: Appointment[];
@@ -64,6 +64,43 @@ class AppointmentService {
       appointmentDateTime: request.appointmentDateTime,
       durationMinutes: request.durationMinutes || 30,
       notes: request.notes || ''
+    });
+
+    return response;
+  }
+
+  /**
+   * จองนัดหมายพร้อมข้อมูลผู้ป่วย
+   * POST /api/appointments/with-patient-info
+   */
+  async bookAppointmentWithPatientInfo(request: BookAppointmentWithPatientInfoRequest): Promise<BookAppointmentResponse> {
+    // Convert date format from DD/MM/YYYY (พ.ศ.) to YYYY-MM-DD (ค.ศ.) for LocalDate
+    let patientDateOfBirth = request.patientDateOfBirth;
+    if (patientDateOfBirth && patientDateOfBirth.includes('/')) {
+      const [day, month, yearBE] = patientDateOfBirth.split('/');
+      const yearCE = parseInt(yearBE) - 543; // Convert พ.ศ. to ค.ศ.
+      patientDateOfBirth = `${yearCE}-${month}-${day}`;
+    }
+
+    const response = await apiClient.post<BookAppointmentResponse>('/appointments/with-patient-info', {
+      doctorId: parseInt(request.doctorId),
+      appointmentDateTime: request.appointmentDateTime,
+      durationMinutes: request.durationMinutes || 60,
+      notes: request.notes || '',
+      // Patient info
+      patientPrefix: request.patientPrefix,
+      patientFirstName: request.patientFirstName,
+      patientLastName: request.patientLastName,
+      patientGender: request.patientGender,
+      patientDateOfBirth: patientDateOfBirth,
+      patientNationality: request.patientNationality,
+      patientCitizenId: request.patientCitizenId,
+      patientPhone: request.patientPhone,
+      patientEmail: request.patientEmail,
+      // Additional info
+      symptoms: request.symptoms,
+      bookingType: request.bookingType || 'manual',
+      queueNumber: request.queueNumber
     });
 
     return response;

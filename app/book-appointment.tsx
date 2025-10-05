@@ -115,8 +115,18 @@ export default function BookAppointment() {
   };
 
   const handleTimeSelectionComplete = () => {
-    if (selectedTime) {
-      setCurrentStep(3); // ไปยืนยันการจอง
+    if (selectedTime && selectedDoctor && selectedDate) {
+      // Navigate to patient form page
+      router.push({
+        pathname: '/(root)/booking/patient-form',
+        params: {
+          doctorId: selectedDoctor.id,
+          doctorName: selectedDoctor.name,
+          date: selectedDate.toISOString(),
+          time: selectedTime,
+          notes: additionalInfo
+        }
+      });
     }
   };
 

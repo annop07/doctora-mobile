@@ -88,6 +88,30 @@ export interface BookAppointmentRequest {
   notes?: string;
 }
 
+export interface BookAppointmentWithPatientInfoRequest {
+  // Appointment basic info
+  doctorId: string;
+  appointmentDateTime: string;
+  durationMinutes?: number;
+  notes?: string;
+
+  // Patient detailed info
+  patientPrefix?: string;
+  patientFirstName: string;
+  patientLastName: string;
+  patientGender?: string;
+  patientDateOfBirth?: string; // YYYY-MM-DD format
+  patientNationality?: string;
+  patientCitizenId?: string;
+  patientPhone?: string;
+  patientEmail?: string;
+
+  // Additional booking info
+  symptoms?: string;
+  bookingType?: string;
+  queueNumber?: string;
+}
+
 export interface DoctorStats {
   totalAppointments: number;
   completedAppointments: number;
