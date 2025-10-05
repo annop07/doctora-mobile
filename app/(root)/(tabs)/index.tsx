@@ -3,12 +3,12 @@ import React from 'react';
 import { Image, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, LoadingSpinner } from '@/components/ui';
-import { DoctorCard, AppointmentCard } from '@/components/Cards';
-import { useDoctors } from '@/services/medical/hooks';
+import { AppointmentCard } from '@/components/Cards';
 import { useMyAppointments } from '@/services/appointments/hooks';
-import { Appointment, Doctor, AppointmentStatus } from '@/types/medical';
+import { Appointment, AppointmentStatus } from '@/types/medical';
 import icons from "@/constants/icons";
 import images from "@/constants/images";
 
@@ -16,11 +16,7 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   // API Queries
-  const { data: doctorsResponse, isLoading: doctorsLoading } = useDoctors();
   const { data: allAppointments, isLoading: appointmentsLoading } = useMyAppointments();
-
-  // Get featured doctors
-  const featuredDoctors = doctorsResponse?.doctors?.slice(0, 5) || [];
 
   // Get upcoming appointments (filter for PENDING and CONFIRMED status, future dates)
   const upcomingAppointments = allAppointments ?
@@ -33,22 +29,22 @@ export default function Dashboard() {
       })
       .slice(0, 2) : [];
 
-  const isLoading = doctorsLoading || appointmentsLoading;
+  // Calculate health statistics
+  const healthStats = {
+    totalAppointments: allAppointments?.length || 0,
+    completedAppointments: allAppointments?.filter(apt => apt.status === AppointmentStatus.COMPLETED).length || 0,
+    uniqueDoctors: allAppointments ? new Set(allAppointments.map(apt => apt.doctor.id)).size : 0,
+    pendingAppointments: allAppointments?.filter(apt => apt.status === AppointmentStatus.PENDING).length || 0
+  };
+
+  const isLoading = appointmentsLoading;
 
   const handleBookAppointment = () => {
     router.push('/book-appointment');
   };
 
-  const handleFindDoctor = () => {
-    router.push('/doctors');
-  };
-
   const handleViewAllAppointments = () => {
     router.push('/appointments');
-  };
-
-  const handleDoctorPress = (doctorId: string) => {
-    router.push(`/(root)/doctors/${doctorId}`);
   };
 
   const handleAppointmentPress = (appointmentId: string) => {
@@ -56,7 +52,7 @@ export default function Dashboard() {
   };
 
   // Loading state
-  if (isLoading && !featuredDoctors.length && !upcomingAppointments.length) {
+  if (isLoading && !upcomingAppointments.length) {
     return (
       <SafeAreaView className="bg-white h-full">
         <LoadingSpinner message="กำลังโหลดข้อมูล..." />
@@ -157,33 +153,66 @@ export default function Dashboard() {
           )}
         </View>
 
-        {/* Featured Doctors */}
-        <View className="mt-6">
-          <View className="flex flex-row items-center justify-between mb-4 px-5">
-            <Text className="text-xl font-rubik-bold text-text-primary">
-              แพทย์ยอดนิยม
-            </Text>
-            <TouchableOpacity onPress={handleFindDoctor}>
-              <Text className="text-base font-rubik-bold text-primary-600">
-                ดูทั้งหมด
-              </Text>
-            </TouchableOpacity>
-          </View>
+        {/* Health Statistics */}
+        <View className="px-5 mt-6">
+          <Text className="text-xl font-rubik-bold text-text-primary mb-4">
+            สถิติของฉัน
+          </Text>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
-          >
-            {featuredDoctors.map((doctor: Doctor) => (
-              <DoctorCard
-                key={doctor.id}
-                doctor={doctor}
-                variant="featured"
-                onPress={() => handleDoctorPress(doctor.id)}
-              />
-            ))}
-          </ScrollView>
+          <Card variant="elevated" padding="lg">
+            <View className="flex-row justify-between">
+              {/* Total Appointments */}
+              <View className="flex-1 items-center">
+                <View className="bg-primary-50 w-12 h-12 rounded-full items-center justify-center mb-2">
+                  <Ionicons name="calendar" size={24} color="#0066CC" />
+                </View>
+                <Text className="text-2xl font-rubik-bold text-text-primary">
+                  {healthStats.totalAppointments}
+                </Text>
+                <Text className="text-xs font-rubik text-secondary-600 text-center mt-1">
+                  นัดหมายทั้งหมด
+                </Text>
+              </View>
+
+              {/* Completed Appointments */}
+              <View className="flex-1 items-center border-l border-r border-secondary-100">
+                <View className="bg-success-50 w-12 h-12 rounded-full items-center justify-center mb-2">
+                  <Ionicons name="checkmark-circle" size={24} color="#22c55e" />
+                </View>
+                <Text className="text-2xl font-rubik-bold text-text-primary">
+                  {healthStats.completedAppointments}
+                </Text>
+                <Text className="text-xs font-rubik text-secondary-600 text-center mt-1">
+                  เสร็จสิ้น
+                </Text>
+              </View>
+
+              {/* Unique Doctors */}
+              <View className="flex-1 items-center">
+                <View className="bg-secondary-50 w-12 h-12 rounded-full items-center justify-center mb-2">
+                  <Ionicons name="people" size={24} color="#6b7280" />
+                </View>
+                <Text className="text-2xl font-rubik-bold text-text-primary">
+                  {healthStats.uniqueDoctors}
+                </Text>
+                <Text className="text-xs font-rubik text-secondary-600 text-center mt-1">
+                  แพทย์ที่เคยพบ
+                </Text>
+              </View>
+            </View>
+
+            {/* Pending indicator if any */}
+            {healthStats.pendingAppointments > 0 && (
+              <View className="mt-4 pt-4 border-t border-secondary-100">
+                <View className="flex-row items-center justify-center bg-warning-50 py-2 px-3 rounded-lg">
+                  <Ionicons name="time-outline" size={16} color="#d97706" style={{ marginRight: 6 }} />
+                  <Text className="text-sm font-rubik-medium text-warning-700">
+                    มี {healthStats.pendingAppointments} นัดที่รอยืนยัน
+                  </Text>
+                </View>
+              </View>
+            )}
+          </Card>
         </View>
       </ScrollView>
     </SafeAreaView>

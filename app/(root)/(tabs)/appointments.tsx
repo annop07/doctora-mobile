@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AppointmentCard } from '@/components/Cards';
@@ -7,42 +7,61 @@ import { useMyAppointments, useAppointmentFilters, useCancelAppointment } from '
 import { ErrorState } from '@/components/ErrorStates';
 import { AppointmentStatus } from '@/types/medical';
 
-type AppointmentFilter = 'all' | 'upcoming' | 'completed' | 'cancelled';
+type AppointmentFilter = 'all' | 'confirmed' | 'pending' | 'cancelled';
 
 export default function Appointments() {
   const [selectedFilter, setSelectedFilter] = useState<AppointmentFilter>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // API Queries
   const { data: allAppointments, isLoading, error, refetch } = useMyAppointments();
   const filters = useAppointmentFilters();
   const cancelMutation = useCancelAppointment();
 
-  // Filter appointments based on selected filter
+  // Filter and sort appointments
   const filteredAppointments = useMemo(() => {
     if (!allAppointments) return [];
 
+    let filtered: typeof allAppointments = [];
+
     switch (selectedFilter) {
-      case 'upcoming':
-        return filters.getUpcoming(allAppointments);
-      case 'completed':
-        return filters.getCompleted(allAppointments);
+      case 'confirmed':
+        filtered = allAppointments.filter(apt => apt.status === AppointmentStatus.CONFIRMED);
+        break;
+      case 'pending':
+        filtered = allAppointments.filter(apt => apt.status === AppointmentStatus.PENDING);
+        break;
       case 'cancelled':
-        return filters.getCancelled(allAppointments);
+        filtered = filters.getCancelled(allAppointments);
+        break;
       default:
-        return allAppointments;
+        filtered = allAppointments;
     }
+
+    // Sort: PENDING first, then CONFIRMED, then others
+    return filtered.sort((a, b) => {
+      const statusOrder: Record<AppointmentStatus, number> = {
+        [AppointmentStatus.PENDING]: 1,
+        [AppointmentStatus.CONFIRMED]: 2,
+        [AppointmentStatus.COMPLETED]: 3,
+        [AppointmentStatus.CANCELLED]: 4,
+        [AppointmentStatus.REJECTED]: 5
+      };
+
+      return (statusOrder[a.status] || 99) - (statusOrder[b.status] || 99);
+    });
   }, [allAppointments, selectedFilter, filters]);
 
   // Count for each filter
   const counts = useMemo(() => {
     if (!allAppointments) {
-      return { all: 0, upcoming: 0, completed: 0, cancelled: 0 };
+      return { all: 0, confirmed: 0, pending: 0, cancelled: 0 };
     }
 
     return {
       all: allAppointments.length,
-      upcoming: filters.getUpcoming(allAppointments).length,
-      completed: filters.getCompleted(allAppointments).length,
+      confirmed: allAppointments.filter(apt => apt.status === AppointmentStatus.CONFIRMED).length,
+      pending: allAppointments.filter(apt => apt.status === AppointmentStatus.PENDING).length,
       cancelled: filters.getCancelled(allAppointments).length
     };
   }, [allAppointments, filters]);
@@ -76,17 +95,7 @@ export default function Appointments() {
           text: 'ยืนยันการยกเลิก',
           style: 'destructive',
           onPress: () => {
-            cancelMutation.mutate(appointmentId, {
-              onSuccess: () => {
-                Alert.alert('สำเร็จ', 'ยกเลิกนัดหมายเรียบร้อยแล้ว');
-              },
-              onError: (error: any) => {
-                Alert.alert(
-                  'เกิดข้อผิดพลาด',
-                  error?.message || 'ไม่สามารถยกเลิกนัดหมายได้ กรุณาลองใหม่อีกครั้ง'
-                );
-              }
-            });
+            cancelMutation.mutate(appointmentId);
           },
         },
       ]
@@ -101,10 +110,16 @@ export default function Appointments() {
     router.push('/book-appointment');
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
+
   const filterButtons = [
     { key: 'all' as AppointmentFilter, title: 'ทั้งหมด', count: counts.all },
-    { key: 'upcoming' as AppointmentFilter, title: 'กำลังมา', count: counts.upcoming },
-    { key: 'completed' as AppointmentFilter, title: 'เสร็จสิ้น', count: counts.completed },
+    { key: 'confirmed' as AppointmentFilter, title: 'ยืนยันแล้ว', count: counts.confirmed },
+    { key: 'pending' as AppointmentFilter, title: 'รอยืนยัน', count: counts.pending },
     { key: 'cancelled' as AppointmentFilter, title: 'ยกเลิก', count: counts.cancelled }
   ];
 
@@ -154,7 +169,17 @@ export default function Appointments() {
 
   return (
     <SafeAreaView className="bg-background-secondary h-full">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#0066CC"
+            colors={['#0066CC']}
+          />
+        }
+      >
         {/* Header */}
         <View className="bg-white px-5 py-4 border-b border-secondary-200">
           <Text className="text-2xl font-rubik-bold text-text-primary mb-2">
@@ -211,18 +236,18 @@ export default function Appointments() {
               <View className="bg-white rounded-xl p-8 w-full">
                 <Text className="text-lg font-rubik-semiBold text-text-primary text-center mb-2">
                   {selectedFilter === 'all' && 'ยังไม่มีการนัดหมาย'}
-                  {selectedFilter === 'upcoming' && 'ไม่มีนัดหมายที่จะมาถึง'}
-                  {selectedFilter === 'completed' && 'ไม่มีการนัดหมายที่เสร็จสิ้น'}
+                  {selectedFilter === 'confirmed' && 'ไม่มีนัดหมายที่ยืนยันแล้ว'}
+                  {selectedFilter === 'pending' && 'ไม่มีนัดหมายที่รอยืนยัน'}
                   {selectedFilter === 'cancelled' && 'ไม่มีการนัดหมายที่ยกเลิก'}
                 </Text>
                 <Text className="text-base font-rubik text-secondary-600 text-center mb-6">
                   {selectedFilter === 'all' && 'เริ่มต้นโดยการจองนัดหมายกับแพทย์'}
-                  {selectedFilter === 'upcoming' && 'จองนัดหมายใหม่เพื่อพบแพทย์'}
-                  {selectedFilter === 'completed' && 'การนัดหมายที่เสร็จสิ้นจะแสดงที่นี่'}
+                  {selectedFilter === 'confirmed' && 'นัดหมายที่ยืนยันแล้วจะแสดงที่นี่'}
+                  {selectedFilter === 'pending' && 'นัดหมายที่รอยืนยันจะแสดงที่นี่'}
                   {selectedFilter === 'cancelled' && 'การนัดหมายที่ยกเลิกจะแสดงที่นี่'}
                 </Text>
 
-                {(selectedFilter === 'all' || selectedFilter === 'upcoming') && (
+                {(selectedFilter === 'all' || selectedFilter === 'pending') && (
                   <TouchableOpacity
                     onPress={handleBookNewAppointment}
                     className="bg-primary-600 py-3 px-6 rounded-xl"

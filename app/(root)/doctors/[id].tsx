@@ -205,25 +205,6 @@ export default function DoctorDetail() {
     </View>
   );
 
-  const renderReviewsTab = () => (
-    <View className="px-5 py-4">
-      <Text className="text-lg font-rubik-semiBold text-text-primary mb-4">
-        รีวิวและคะแนน
-      </Text>
-
-      <Card variant="outlined" padding="lg">
-        <View className="items-center">
-          <Text className="text-base font-rubik text-secondary-600">
-            ยังไม่มีรีวิว
-          </Text>
-          <Text className="text-sm font-rubik text-secondary-500 mt-2">
-            เป็นคนแรกที่รีวิวแพทย์ท่านนี้
-          </Text>
-        </View>
-      </Card>
-    </View>
-  );
-
   return (
     <SafeAreaView className="bg-background-secondary h-full">
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -264,23 +245,6 @@ export default function DoctorDetail() {
               <Text className="text-base font-rubik text-primary-600 mt-1">
                 {doctor.specialty?.name || "ไม่ระบุแผนก"}
               </Text>
-
-              {/* Rating and Stats */}
-              <View className="flex-row items-center mt-2">
-                <View className="flex-row items-center mr-4">
-                  <Image
-                    source={icons.star}
-                    className="size-4 mr-1"
-                    tintColor="#f59e0b"
-                  />
-                  <Text className="text-sm font-rubik-semiBold text-secondary-700">
-                    {doctor.rating?.toFixed(1) || "N/A"}
-                  </Text>
-                  <Text className="text-sm font-rubik text-secondary-500 ml-1">
-                    ({doctor.totalRatings || 0} รีวิว)
-                  </Text>
-                </View>
-              </View>
 
               <View className="flex-row items-center mt-2">
                 <View className="bg-primary-50 px-2 py-1 rounded mr-2">
@@ -350,25 +314,6 @@ export default function DoctorDetail() {
                 ตารางเวลา
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setSelectedTab("reviews")}
-              className={`flex-1 py-4 border-b-2 ${
-                selectedTab === "reviews"
-                  ? "border-primary-600"
-                  : "border-transparent"
-              }`}
-            >
-              <Text
-                className={`text-center font-rubik-medium ${
-                  selectedTab === "reviews"
-                    ? "text-primary-600"
-                    : "text-secondary-600"
-                }`}
-              >
-                รีวิว
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
 
@@ -376,7 +321,6 @@ export default function DoctorDetail() {
         <View className="bg-white">
           {selectedTab === "about" && renderAboutTab()}
           {selectedTab === "availability" && renderAvailabilityTab()}
-          {selectedTab === "reviews" && renderReviewsTab()}
         </View>
 
         {/* Spacing for floating button */}

@@ -14,12 +14,11 @@ interface AppointmentCardProps {
     onPress?: () => void;
     showActions?: boolean;
     onCancel?: (appointmentId: string) => void;
+    onReschedule?: (appointmentId: string) => void;
 }
 
 export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProps) => {
     const doctorName = doctor.name || `${doctor.firstName} ${doctor.lastName}`;
-    const rating = doctor.rating || 0;
-    const reviewCount = doctor.totalRatings || 0;
     const fee = doctor.consultationFee ? doctor.consultationFee.toLocaleString('th-TH') : '0';
 
     if (variant === 'featured') {
@@ -30,12 +29,6 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
                     className='size-full rounded-2xl'
                 />
                 <Image source={images.cardGradient} className='size-full rounded-2xl absolute bottom-0' />
-
-                {/* Rating Badge */}
-                <View className='flex flex-row items-center bg-white/90 px-3 py-1.5 rounded-full absolute top-5 right-5'>
-                    <Image source={icons.star} className='size-3.5' />
-                    <Text className='text-xs font-rubik-bold text-primary-600 mt-1'>{rating.toFixed(1)}</Text>
-                </View>
 
                 {/* Specialty Badge */}
                 <View className='bg-primary-600/90 px-3 py-1 rounded-full absolute top-5 left-5'>
@@ -68,11 +61,6 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
 
     return (
         <TouchableOpacity onPress={onPress} className='flex-1 w-full my-2 px-4 py-4 rounded-xl bg-white border border-secondary-200 shadow-sm'>
-            {/* Rating Badge */}
-            <View className='flex flex-row items-center absolute px-2 top-4 right-4 bg-primary-50 py-1 rounded-full z-50'>
-                <Image source={icons.star} className='size-3 mr-1' tintColor='#f59e0b' />
-                <Text className='text-xs font-rubik-semiBold text-secondary-700'>{rating.toFixed(1)}</Text>
-            </View>
 
             <View className='flex flex-row'>
                 {/* Doctor Avatar */}
@@ -107,13 +95,10 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
                         )}
                     </View>
 
-                    {/* Price & Reviews */}
-                    <View className='flex flex-row items-center justify-between mt-3'>
+                    {/* Price */}
+                    <View className='flex flex-row items-center mt-3'>
                         <Text className='text-lg font-rubik-bold text-primary-600'>
                             ฿{fee}
-                        </Text>
-                        <Text className='text-xs font-rubik text-secondary-500'>
-                            {reviewCount} รีวิว
                         </Text>
                     </View>
                 </View>
@@ -122,7 +107,7 @@ export const DoctorCard = ({ doctor, onPress, variant = 'list' }: DoctorCardProp
     );
 };
 
-export const AppointmentCard = ({ appointment, onPress, showActions = false, onCancel }: AppointmentCardProps) => {
+export const AppointmentCard = ({ appointment, onPress, showActions = false, onCancel, onReschedule }: AppointmentCardProps) => {
     const doctorName = appointment.doctor.name || `${appointment.doctor.firstName} ${appointment.doctor.lastName}`;
     const appointmentDate = new Date(appointment.appointmentDateTime);
     const dateStr = appointmentDate.toLocaleDateString('th-TH', {
