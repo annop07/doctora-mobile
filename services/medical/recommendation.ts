@@ -36,8 +36,12 @@ export const recommendDoctors = async (
     console.log('✅ Received doctor recommendations:', response);
     return response;
   } catch (error: any) {
-    console.error('❌ Error getting doctor recommendations:', error);
-    console.log('⚠️ Recommendation API not available, using fallback strategy...');
+    // 403 is expected when API requires authentication - silently use fallback
+    if (error.status === 403) {
+      console.log('ℹ️ Using fallback recommendation strategy (AI requires auth)');
+    } else {
+      console.error('❌ Error getting doctor recommendations:', error);
+    }
 
     // Fallback: Use simple recommendation based on specialty and filters
     const doctors = await getSimpleDoctorRecommendations(request.specialtyId, request.symptoms);

@@ -7,6 +7,8 @@ import { Button, Card, Input } from '@/components/ui';
 import { Header, TimeSlotPicker, DoctorCard, SpecialtyCard } from '@/components';
 import { useSpecialtiesWithCount, useDoctorsBySpecialty, useDoctors, useDoctorRecommendations } from '@/services/medical/hooks';
 import { useBookAppointment } from '@/services/appointments/hooks';
+import { availabilityService } from '@/services/availability';
+import { apiClient } from '@/services/api/client';
 import { ErrorState } from '@/components/ErrorStates';
 import { Doctor, BookAppointmentRequest } from '@/types/medical';
 
@@ -33,7 +35,7 @@ export default function BookAppointment() {
     error: doctorsBySpecialtyError
   } = useDoctorsBySpecialty(firstSpecialtyId || '', 0, 10, !useRecommendation && !!firstSpecialtyId);
 
-  // Get recommended doctors using AI system
+  // Get recommended doctors using AI system - auto-load when specialty is selected
   const {
     data: recommendedDoctors,
     isLoading: recommendationLoading,
@@ -45,15 +47,13 @@ export default function BookAppointment() {
       maxFee: 5000,
       minRating: 3
     },
-    useRecommendation && !!firstSpecialtyId
+    !!firstSpecialtyId // Auto-load when specialty is selected
   );
 
-  // Combine loading and error states
-  const doctorsLoading = useRecommendation ? recommendationLoading : doctorsBySpecialtyLoading;
-  const doctorsError = useRecommendation ? recommendationError : doctorsBySpecialtyError;
-  const displayedDoctors = useRecommendation
-    ? recommendedDoctors?.doctors || []
-    : (doctorsBySpecialty ? (Array.isArray(doctorsBySpecialty) ? doctorsBySpecialty : doctorsBySpecialty.doctors || []) : []);
+  // Combine loading and error states - always use recommended doctors for auto-selection
+  const doctorsLoading = recommendationLoading;
+  const doctorsError = recommendationError;
+  const displayedDoctors = recommendedDoctors?.doctors || [];
 
   // Get specific doctor if doctorId is provided
   const { data: allDoctorsResponse } = useDoctors({ size: 100 });
@@ -90,12 +90,108 @@ export default function BookAppointment() {
     });
   };
 
-  const handleFindDoctors = () => {
+  const handleFindDoctors = async () => {
     if (selectedSpecialtyIds.length === 0) {
       Alert.alert('กรุณาเลือกแผนกที่ต้องการ', 'เลือกอย่างน้อย 1 แผนกเพื่อค้นหาแพทย์ที่เหมาะสม');
       return;
     }
-    setCurrentStep(2);
+
+    if (!selectedDate) {
+      Alert.alert('กรุณาเลือกวันที่', 'กรุณาเลือกวันที่ที่ต้องการนัดหมาย');
+      return;
+    }
+
+    try {
+      // Get specialty object from specialtiesWithCount
+      const selectedSpecialty = specialtiesWithCount?.find(s => s.id === selectedSpecialtyIds[0]);
+
+      if (!selectedSpecialty) {
+        Alert.alert('ข้อผิดพลาด', 'ไม่พบข้อมูลแผนก');
+        return;
+      }
+
+      // Use English specialty name for API (Backend stores English names)
+      const specialtyName = selectedSpecialty.name;
+
+      // Format date for API (YYYY-MM-DD)
+      const dateString = availabilityService.formatDateForApi(selectedDate);
+
+      console.log('🎯 [Smart Select] Calling API for specialty:', specialtyName, 'date:', dateString);
+
+      // Call smart-select API (same as website)
+      const response = await apiClient.get<{
+        doctor: Doctor | null;
+        message: string;
+        totalDoctorsInSpecialty?: number;
+        doctorsAvailableOnDate?: number;
+      }>(`/doctors/smart-select`, {
+        specialty: specialtyName,
+        date: dateString
+      });
+
+      console.log('✅ [Smart Select] Response:', response);
+
+      if (!response.doctor) {
+        Alert.alert(
+          'ไม่พบแพทย์ที่ว่าง',
+          response.message || 'ไม่มีแพทย์ที่ว่างในวันที่เลือก กรุณาเลือกวันอื่น',
+          [
+            { text: 'เลือกวันใหม่', style: 'cancel' },
+            { text: 'เลือกแพทย์เอง', onPress: handleManualSelection }
+          ]
+        );
+        return;
+      }
+
+      // Auto-selected doctor from smart-select API
+      const selectedDoc: Doctor = {
+        id: response.doctor.id.toString(),
+        name: response.doctor.doctorName || response.doctor.name,
+        specialty: response.doctor.specialty,
+        experienceYears: response.doctor.experienceYears,
+        consultationFee: response.doctor.consultationFee,
+        rating: 0, // Not provided by this API
+        reviewCount: 0,
+        image: '',
+        bio: response.doctor.bio || '',
+        licenseNumber: response.doctor.licenseNumber,
+        roomNumber: response.doctor.roomNumber,
+        isActive: response.doctor.isActive
+      };
+
+      setSelectedDoctor(selectedDoc);
+
+      console.log('🎯 [Smart Select] Selected doctor:', selectedDoc.name, 'ID:', selectedDoc.id);
+
+      // Navigate directly to patient form
+      router.push({
+        pathname: '/(root)/booking/patient-form',
+        params: {
+          doctorId: selectedDoc.id,
+          doctorName: selectedDoc.name,
+          date: selectedDate.toISOString(),
+          time: selectedTime || '',
+          notes: additionalInfo
+        }
+      });
+    } catch (error: any) {
+      // Check if it's a 403 error (auth required but API is public - should not happen)
+      if (error.status === 403) {
+        console.log('ℹ️ Smart-select requires auth, using fallback');
+        // Show doctor selection page instead
+        setCurrentStep(2);
+      } else {
+        console.error('❌ Error in smart-select:', error);
+        Alert.alert(
+          'เกิดข้อผิดพลาด',
+          'ไม่สามารถเลือกแพทย์ได้ กรุณาลองใหม่อีกครั้ง',
+          [
+            { text: 'ตกลง', style: 'cancel' },
+            { text: 'เลือกแพทย์เอง', onPress: handleManualSelection }
+          ]
+        );
+      }
+    }
   };
 
   const handleBookWithDoctor = (doctorId: string | number) => {
@@ -281,7 +377,7 @@ export default function BookAppointment() {
         )}
       </View>
 
-      {/* Date and Time Selection */}
+      {/* Date Selection Only */}
       <View className="mb-6">
         <TimeSlotPicker
           selectedDate={selectedDate}
@@ -298,7 +394,7 @@ export default function BookAppointment() {
           อธิบายอาการของคุณ
         </Text>
         <Text className="text-sm font-rubik text-secondary-600 mb-4">
-          ระบบ AI จะใช้ข้อมูลนี้ในการแนะนำแพทย์ที่เหมาะสม (ไม่บังคับ)
+          ระบบจะใช้ข้อมูลนี้ในการจัดลำดับคิว (ไม่บังคับ)
         </Text>
         <Input
           placeholder="เช่น ปวดหัว ไข้ ปวดท้อง มีไข้สูง เจ็บคอ..."
@@ -312,9 +408,9 @@ export default function BookAppointment() {
       {/* Action Buttons */}
       <View className="px-5 pb-8">
         <Button
-          title="ค้นหาแพทย์ที่เหมาะสม"
+          title="เลือกแพทย์อัตโนมัติ"
           onPress={handleFindDoctors}
-          disabled={selectedSpecialtyIds.length === 0 || specialtiesLoading}
+          disabled={selectedSpecialtyIds.length === 0 || !selectedDate || specialtiesLoading}
           variant="primary"
           size="lg"
         />

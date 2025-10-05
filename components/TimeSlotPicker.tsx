@@ -22,8 +22,8 @@ interface TimeSlotPickerProps {
 const generateDefaultSlots = (): TimeSlot[] => {
   const slots: TimeSlot[] = [];
   const times = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+    '09:00', '10:00', '11:00',
+    '14:00', '15:00', '16:00'
   ];
 
   times.forEach(time => {
@@ -273,8 +273,19 @@ export const TimeSlotPicker = ({
         {/* Time Slots */}
         {!isLoadingSlots && !slotsError && (
           <>
-            <View className="flex-row flex-wrap">
-              {displaySlots.map((slot) => {
+            {(() => {
+              // Split slots into morning and afternoon
+              const morningSlots = displaySlots.filter(slot => {
+                const hour = parseInt(slot.time.split(':')[0]);
+                return hour < 12;
+              });
+
+              const afternoonSlots = displaySlots.filter(slot => {
+                const hour = parseInt(slot.time.split(':')[0]);
+                return hour >= 12;
+              });
+
+              const renderTimeSlot = (slot: TimeSlot) => {
                 const isSelected = selectedTime === slot.time;
                 const isAvailable = slot.available;
 
@@ -293,13 +304,14 @@ export const TimeSlotPicker = ({
                       }
                     }}
                     disabled={!isAvailable}
-                    className={`px-4 py-3 rounded-xl border mr-3 mb-3 min-w-28 items-center ${
+                    className={`px-4 py-3 rounded-xl border mb-3 items-center ${
                       isSelected
                         ? 'bg-primary-600 border-primary-600'
                         : isAvailable
                         ? 'bg-white border-secondary-200'
                         : 'bg-secondary-50 border-secondary-100'
                     }`}
+                    style={{ flex: 1, minWidth: 100, marginHorizontal: 4 }}
                   >
                     <Text
                       className={`text-base font-rubik-medium ${
@@ -314,8 +326,40 @@ export const TimeSlotPicker = ({
                     </Text>
                   </TouchableOpacity>
                 );
-              })}
-            </View>
+              };
+
+              return (
+                <>
+                  {/* Morning Section */}
+                  {morningSlots.length > 0 && (
+                    <View className="mb-6">
+                      <View className="bg-emerald-50 px-3 py-2 rounded-lg mb-3">
+                        <Text className="text-sm font-rubik-semiBold text-emerald-700">
+                          ช่วงเช้า (09:00 - 12:00)
+                        </Text>
+                      </View>
+                      <View className="flex-row flex-wrap -mx-1">
+                        {morningSlots.map(renderTimeSlot)}
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Afternoon Section */}
+                  {afternoonSlots.length > 0 && (
+                    <View className="mb-4">
+                      <View className="bg-teal-50 px-3 py-2 rounded-lg mb-3">
+                        <Text className="text-sm font-rubik-semiBold text-teal-700">
+                          ช่วงบ่าย (12:00 - 17:00)
+                        </Text>
+                      </View>
+                      <View className="flex-row flex-wrap -mx-1">
+                        {afternoonSlots.map(renderTimeSlot)}
+                      </View>
+                    </View>
+                  )}
+                </>
+              );
+            })()}
 
             {/* No Slots Available Message */}
             {displaySlots.filter(slot => slot.available).length === 0 && (

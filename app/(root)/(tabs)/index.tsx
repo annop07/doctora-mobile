@@ -96,38 +96,25 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <View className="px-5 mt-6">
           <Text className="text-xl font-rubik-bold text-text-primary mb-4">
-            บริการของเรา
+            เริ่มจองนัดหมายแพทย์
           </Text>
 
-          <View className="flex-row space-x-4">
-            <TouchableOpacity
-              className="flex-1"
-              onPress={handleBookAppointment}
-            >
-              <Card variant="elevated" padding="lg">
-                <View className="items-center">
-                  <Image source={icons.calendar} className="size-8 mb-3" />
-                  <Text className="text-sm font-rubik-medium text-text-primary">
-                    จองนัดหมาย
+          <TouchableOpacity onPress={handleBookAppointment}>
+            <Card variant="elevated" padding="lg">
+              <View className="flex-row items-center">
+                <Image source={icons.calendar} className="size-10 mr-4" />
+                <View className="flex-1">
+                  <Text className="text-base font-rubik-semiBold text-text-primary">
+                    เลือกแพทย์ให้ฉัน
+                  </Text>
+                  <Text className="text-sm font-rubik text-secondary-600 mt-1">
+                    ระบบจะแนะนำแพทย์ที่เหมาะสมตามอาการ
                   </Text>
                 </View>
-              </Card>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="flex-1"
-              onPress={handleFindDoctor}
-            >
-              <Card variant="elevated" padding="lg">
-                <View className="items-center">
-                  <Image source={icons.search} className="size-8 mb-3" />
-                  <Text className="text-sm font-rubik-medium text-text-primary">
-                    หาแพทย์
-                  </Text>
-                </View>
-              </Card>
-            </TouchableOpacity>
-          </View>
+                <Image source={icons.rightArrow} className="size-5" />
+              </View>
+            </Card>
+          </TouchableOpacity>
         </View>
 
         {/* Upcoming Appointments */}

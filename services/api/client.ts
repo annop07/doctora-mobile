@@ -64,8 +64,12 @@ class ApiClient {
       async (error: AxiosError) => {
         const originalRequest = error.config;
 
-        // Log error in development (skip expected 403 errors from /slots endpoint)
-        const isExpected403 = error.response?.status === 403 && originalRequest?.url?.includes('/slots');
+        // Log error in development (skip expected 403 errors from /slots, /recommend, and /smart-select endpoints)
+        const isExpected403 = error.response?.status === 403 && (
+          originalRequest?.url?.includes('/slots') ||
+          originalRequest?.url?.includes('/recommend') ||
+          originalRequest?.url?.includes('/smart-select')
+        );
 
         if (__DEV__ && !isExpected403) {
           console.error(`❌ API Error: ${error.response?.status} ${originalRequest?.url}`);
