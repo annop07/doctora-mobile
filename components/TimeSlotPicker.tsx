@@ -278,6 +278,11 @@ export const TimeSlotPicker = ({
                 const isSelected = selectedTime === slot.time;
                 const isAvailable = slot.available;
 
+                // Generate end time (1 hour later)
+                const [hours, minutes] = slot.time.split(':').map(Number);
+                const endHour = String(hours + 1).padStart(2, '0');
+                const timeRange = `${slot.time}-${endHour}:${String(minutes).padStart(2, '0')}`;
+
                 return (
                   <TouchableOpacity
                     key={slot.time}
@@ -288,7 +293,7 @@ export const TimeSlotPicker = ({
                       }
                     }}
                     disabled={!isAvailable}
-                    className={`px-4 py-3 rounded-xl border mr-3 mb-3 min-w-20 items-center ${
+                    className={`px-4 py-3 rounded-xl border mr-3 mb-3 min-w-28 items-center ${
                       isSelected
                         ? 'bg-primary-600 border-primary-600'
                         : isAvailable
@@ -305,7 +310,7 @@ export const TimeSlotPicker = ({
                           : 'text-secondary-400'
                       }`}
                     >
-                      {slot.time}
+                      {timeRange}
                     </Text>
                   </TouchableOpacity>
                 );

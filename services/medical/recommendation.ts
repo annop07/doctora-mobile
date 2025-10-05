@@ -29,15 +29,25 @@ export const recommendDoctors = async (
     console.log('🔍 Requesting doctor recommendations:', request);
 
     const response = await apiClient.post<DoctorRecommendationResponse>(
-      '/doctors/me/recommend',
+      '/doctors/recommend',
       request
     );
 
     console.log('✅ Received doctor recommendations:', response);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error getting doctor recommendations:', error);
-    throw error;
+    console.log('⚠️ Recommendation API not available, using fallback strategy...');
+
+    // Fallback: Use simple recommendation based on specialty and filters
+    const doctors = await getSimpleDoctorRecommendations(request.specialtyId, request.symptoms);
+
+    return {
+      doctors: doctors,
+      totalFound: doctors.length,
+      criteria: request,
+      message: 'แนะนำแพทย์ตามความเชี่ยวชาญและคะแนนรีวิว (ระบบ AI ไม่พร้อมใช้งาน)'
+    };
   }
 };
 
@@ -62,7 +72,7 @@ export const getSimpleDoctorRecommendations = async (
     const response = await apiClient.get<{
       doctors: Doctor[];
       totalItems: number;
-    }>('/doctors/me', {
+    }>('/doctors', {
       params: filters
     });
 

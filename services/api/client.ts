@@ -64,10 +64,14 @@ class ApiClient {
       async (error: AxiosError) => {
         const originalRequest = error.config;
 
-        // Log error in development
-        if (__DEV__) {
+        // Log error in development (skip expected 403 errors from /slots endpoint)
+        const isExpected403 = error.response?.status === 403 && originalRequest?.url?.includes('/slots');
+
+        if (__DEV__ && !isExpected403) {
           console.error(`❌ API Error: ${error.response?.status} ${originalRequest?.url}`);
           console.error('📦 Error Data:', error.response?.data);
+        } else if (__DEV__ && isExpected403) {
+          console.log(`ℹ️ API requires auth: ${originalRequest?.url} - using fallback`);
         }
 
         // Handle 401 Unauthorized

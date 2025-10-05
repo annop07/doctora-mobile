@@ -49,17 +49,95 @@ class AvailabilityService {
   }
 
   /**
+   * ดูเวลาที่ถูกจองแล้วของหมอในวันที่เจาะจง
+   * GET /api/appointments/doctor/{doctorId}/booked-slots?date=YYYY-MM-DD
+   */
+  async getBookedTimeSlots(doctorId: string, date: string): Promise<string[]> {
+    try {
+      const response = await apiClient.get<{
+        doctorId: number;
+        date: string;
+        bookedSlots: Array<{
+          appointmentId: number;
+          startTime: string; // ISO datetime
+          durationMinutes: number;
+          status: string;
+        }>;
+      }>(`/appointments/doctor/${doctorId}/booked-slots?date=${date}`);
+
+      // Extract time from ISO datetime and filter only confirmed/pending appointments
+      const bookedTimes = response.bookedSlots
+        .filter(slot => slot.status === 'CONFIRMED' || slot.status === 'PENDING')
+        .map(slot => {
+          const datetime = new Date(slot.startTime);
+          const hours = String(datetime.getHours()).padStart(2, '0');
+          const minutes = String(datetime.getMinutes()).padStart(2, '0');
+          return `${hours}:${minutes}`;
+        });
+
+      console.log(`📅 Booked slots for doctor ${doctorId} on ${date}:`, bookedTimes);
+      return bookedTimes;
+    } catch (error) {
+      console.error('❌ Error fetching booked slots:', error);
+      return []; // Return empty array if fails
+    }
+  }
+
+  /**
    * ดูช่วงเวลาว่างของหมอในวันที่เจาะจง
-   * GET /api/availability/doctor/{doctorId}/slots?date=2024-01-15
+   * Generate slots from doctor's schedule and filter out booked times
    */
   async getAvailableTimeSlots(
     doctorId: string,
     date: string // YYYY-MM-DD format
   ): Promise<AvailableTimeSlotsResponse> {
-    const response = await apiClient.get<AvailableTimeSlotsResponse>(
-      `/availability/doctor/${doctorId}/slots?date=${date}`
-    );
-    return response;
+    try {
+      // Try to get slots from API first (may require authentication)
+      const response = await apiClient.get<AvailableTimeSlotsResponse>(
+        `/availability/doctor/${doctorId}/slots?date=${date}`
+      );
+      return response;
+    } catch (error: any) {
+      // Fallback: Generate slots from availability schedule
+      console.log('✅ FALLBACK ACTIVE: Generating time slots from doctor schedule (API requires auth)');
+
+      // Get the day of week from the date
+      const selectedDate = new Date(date);
+      const dayOfWeek = selectedDate.getDay() === 0 ? 7 : selectedDate.getDay();
+
+      // Get doctor's availability for that day
+      const availabilities = await this.getDoctorAvailabilities(doctorId);
+      console.log(`📅 Doctor ${doctorId} schedule for day ${dayOfWeek}:`, availabilities);
+
+      const daySchedule = availabilities.find(av => av.dayOfWeek === dayOfWeek);
+
+      if (!daySchedule) {
+        console.log('⚠️ No schedule found for this day');
+        return {
+          doctorId: parseInt(doctorId),
+          date: date,
+          availableSlots: [],
+          totalSlots: 0
+        };
+      }
+
+      // Generate all possible time slots from startTime to endTime
+      const allSlots = this.generateTimeSlots(daySchedule.startTime, daySchedule.endTime);
+      console.log(`✅ Generated ${allSlots.length} time slots from ${daySchedule.startTime} to ${daySchedule.endTime}`);
+
+      // Get booked slots and filter them out
+      const bookedSlots = await this.getBookedTimeSlots(doctorId, date);
+      const availableSlots = allSlots.filter(slot => !bookedSlots.includes(slot));
+
+      console.log(`✅ Available slots after filtering: ${availableSlots.length}/${allSlots.length}`);
+
+      return {
+        doctorId: parseInt(doctorId),
+        date: date,
+        availableSlots: availableSlots,
+        totalSlots: availableSlots.length
+      };
+    }
   }
 
   /**
@@ -96,21 +174,24 @@ class AvailabilityService {
   }
 
   /**
-   * Helper: สร้าง time slots ทุก 30 นาทีระหว่างเวลาที่กำหนด
+   * Helper: สร้าง time slots ทุก 1 ชั่วโมงระหว่างเวลาที่กำหนด
    */
   generateTimeSlots(startTime: string, endTime: string): string[] {
     const slots: string[] = [];
-    const start = new Date(`1970-01-01T${startTime}:00`);
-    const end = new Date(`1970-01-01T${endTime}:00`);
+
+    const start = new Date(`1970-01-01T${startTime}`);
+    const end = new Date(`1970-01-01T${endTime}`);
 
     let current = new Date(start);
 
     while (current < end) {
-      const timeString = current.toTimeString().substring(0, 5); // HH:mm format
+      const hours = String(current.getHours()).padStart(2, '0');
+      const minutes = String(current.getMinutes()).padStart(2, '0');
+      const timeString = `${hours}:${minutes}`; // HH:mm format
       slots.push(timeString);
 
-      // เพิ่ม 30 นาที
-      current.setMinutes(current.getMinutes() + 30);
+      // เพิ่ม 1 ชั่วโมง (60 นาที)
+      current.setMinutes(current.getMinutes() + 60);
     }
 
     return slots;
