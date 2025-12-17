@@ -1,13 +1,12 @@
 ﻿import { Redirect, Slot } from "expo-router";
 import { ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function RootLayout() {
-    // จำลอง context สำหรับการทดสอบ
-    const loading = false;
-    const isLoggedIn = true; // เปลี่ยนเป็น true เพื่อให้เข้าไปใน tabs ได้
+    const { user, loading } = useAuth();
 
-    if(loading){
+    if (loading) {
         return (
             <SafeAreaView className="bg-white h-full flex justify-center items-center">
                 <ActivityIndicator className="text-primary-300" size="large" />
@@ -15,7 +14,8 @@ export default function RootLayout() {
         )
     }
 
-    if(!isLoggedIn) return <Redirect href='/sign-in'/>
+    // ถ้าไม่มี user ให้ redirect ไปหน้า sign-in
+    if (!user) return <Redirect href='/sign-in' />
 
     return <Slot />
 }

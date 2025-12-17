@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '../appointments';
 import { Appointment, BookAppointmentRequest } from '@/types/medical';
 
-// Query keys
 export const appointmentKeys = {
   all: ['appointments'] as const,
   my: () => [...appointmentKeys.all, 'my'] as const,
@@ -10,9 +9,6 @@ export const appointmentKeys = {
   byId: (id: string) => [...appointmentKeys.all, 'detail', id] as const,
 };
 
-/**
- * Hook สำหรับดึงรายการนัดหมายของผู้ป่วย
- */
 export function useMyAppointments() {
   return useQuery({
     queryKey: appointmentKeys.my(),
@@ -21,9 +17,6 @@ export function useMyAppointments() {
   });
 }
 
-/**
- * Hook สำหรับดึงรายการนัดหมายของหมอ (สำหรับแพทย์เท่านั้น)
- */
 export function useDoctorAppointments() {
   return useQuery({
     queryKey: appointmentKeys.doctor(),
@@ -32,9 +25,6 @@ export function useDoctorAppointments() {
   });
 }
 
-/**
- * Hook สำหรับจองนัดหมาย
- */
 export function useBookAppointment() {
   const queryClient = useQueryClient();
 
@@ -42,17 +32,12 @@ export function useBookAppointment() {
     mutationFn: (request: BookAppointmentRequest) =>
       appointmentService.bookAppointment(request),
     onSuccess: () => {
-      // Invalidate และ refetch นัดหมายของผู้ป่วย
       queryClient.invalidateQueries({ queryKey: appointmentKeys.my() });
-      // Invalidate นัดหมายของหมอด้วย (กรณีหมอเปิดหน้าดูนัดหมายพร้อมกัน)
       queryClient.invalidateQueries({ queryKey: appointmentKeys.doctor() });
     },
   });
 }
 
-/**
- * Hook สำหรับยกเลิกนัดหมาย
- */
 export function useCancelAppointment() {
   const queryClient = useQueryClient();
 
@@ -66,9 +51,6 @@ export function useCancelAppointment() {
   });
 }
 
-/**
- * Hook สำหรับอนุมัตินัดหมาย (สำหรับแพทย์เท่านั้น)
- */
 export function useConfirmAppointment() {
   const queryClient = useQueryClient();
 
@@ -82,9 +64,6 @@ export function useConfirmAppointment() {
   });
 }
 
-/**
- * Hook สำหรับปฏิเสธนัดหมาย (สำหรับแพทย์เท่านั้น)
- */
 export function useRejectAppointment() {
   const queryClient = useQueryClient();
 
@@ -98,10 +77,19 @@ export function useRejectAppointment() {
   });
 }
 
-/**
- * Hook สำหรับกรองนัดหมายตาม status (client-side)
- * ใช้กับข้อมูลที่ได้จาก useMyAppointments หรือ useDoctorAppointments
- */
+export function useAppointmentById(id: string) {
+  const { data: appointments, isLoading, error } = useMyAppointments();
+
+  const appointment = appointments?.find(apt => apt.id === id);
+
+  return {
+    data: appointment,
+    isLoading,
+    error,
+    notFound: !isLoading && !appointment && !error,
+  };
+}
+
 export function useAppointmentFilters() {
   return {
     filterByStatus: appointmentService.filterAppointmentsByStatus,

@@ -4,7 +4,6 @@ import { storageService } from '@/utils/storage';
 import { router } from 'expo-router';
 
 export class ErrorHandler {
-  // Handle different types of API errors
   static handleApiError(error: ApiError): void {
     switch (error.status) {
       case 401:
@@ -33,14 +32,9 @@ export class ErrorHandler {
     }
   }
 
-  // 401 - Unauthorized: Auto logout and redirect to login
   private static async handleUnauthorizedError(error: ApiError): Promise<void> {
     console.warn('401 Unauthorized - Logging out user');
-
-    // Clear auth data
     await storageService.clearAllAuthData();
-
-    // Show alert and redirect to login
     Alert.alert(
       'เซสชันหมดอายุ',
       'กรุณาเข้าสู่ระบบใหม่อีกครั้ง',
@@ -48,7 +42,6 @@ export class ErrorHandler {
         {
           text: 'ตกลง',
           onPress: () => {
-            // Redirect to sign-in
             router.replace('/sign-in');
           }
         }
@@ -56,7 +49,6 @@ export class ErrorHandler {
     );
   }
 
-  // 403 - Forbidden: Show permission error
   private static handleForbiddenError(error: ApiError): void {
     Alert.alert(
       'ไม่ได้รับอนุญาต',
@@ -65,7 +57,6 @@ export class ErrorHandler {
     );
   }
 
-  // 404 - Not Found: Show not found error
   private static handleNotFoundError(error: ApiError): void {
     Alert.alert(
       'ไม่พบข้อมูล',
@@ -74,7 +65,6 @@ export class ErrorHandler {
     );
   }
 
-  // 422 - Validation Error: Show field-specific errors
   private static handleValidationError(error: ApiError): void {
     const message = error.details?.errors
       ? Object.values(error.details.errors).flat().join('\n')
@@ -87,7 +77,6 @@ export class ErrorHandler {
     );
   }
 
-  // 500+ - Server Error: Show retry option
   private static handleServerError(error: ApiError): void {
     Alert.alert(
       'ปัญหาระบบเซิร์ฟเวอร์',
@@ -98,7 +87,6 @@ export class ErrorHandler {
           text: 'ลองใหม่',
           style: 'default',
           onPress: () => {
-            // The caller should handle retry logic
             console.log('User requested retry');
           }
         }
@@ -106,7 +94,6 @@ export class ErrorHandler {
     );
   }
 
-  // Network Error: Show network connectivity error
   private static handleNetworkError(error: ApiError): void {
     Alert.alert(
       'ไม่สามารถเชื่อมต่อได้',
@@ -124,7 +111,6 @@ export class ErrorHandler {
     );
   }
 
-  // Generic Error: Show generic error message
   private static handleGenericError(error: ApiError): void {
     Alert.alert(
       'เกิดข้อผิดพลาด',
@@ -133,7 +119,6 @@ export class ErrorHandler {
     );
   }
 
-  // Silent error logging (for analytics/monitoring)
   static logError(error: ApiError, context?: string): void {
     const errorLog = {
       message: error.message,
@@ -147,19 +132,13 @@ export class ErrorHandler {
     if (__DEV__) {
       console.error('API Error:', errorLog);
     }
-
-    // TODO: Send to error monitoring service (Sentry, Crashlytics, etc.)
-    // ErrorReportingService.logError(errorLog);
   }
 
-  // Check if error should show user-facing message
   static shouldShowUserError(error: ApiError): boolean {
-    // Don't show user errors for certain status codes
-    const silentErrors = [401]; // 401 is handled specially with logout
+    const silentErrors = [401];
     return !silentErrors.includes(error.status);
   }
 
-  // Get user-friendly error message without showing alert
   static getErrorMessage(error: ApiError): { title: string; message: string } {
     switch (error.status) {
       case 0:
@@ -203,5 +182,4 @@ export class ErrorHandler {
   }
 }
 
-// Export for easy use
 export const { handleApiError, logError, shouldShowUserError, getErrorMessage } = ErrorHandler;

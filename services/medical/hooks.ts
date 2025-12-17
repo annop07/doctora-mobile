@@ -51,11 +51,6 @@ export const QUERY_KEYS = {
   timeSlots: (doctorId: string, date: string) => ['availability', 'slots', doctorId, date] as const,
 } as const;
 
-// ============= DOCTOR HOOKS =============
-
-/**
- * Hook for fetching doctors with search and filtering
- */
 export const useDoctors = (filters: DoctorSearchFilters = {}) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.doctors, filters],
@@ -65,9 +60,6 @@ export const useDoctors = (filters: DoctorSearchFilters = {}) => {
   });
 };
 
-/**
- * Hook for infinite scroll doctors list
- */
 export const useDoctorsInfinite = (filters: DoctorSearchFilters = {}) => {
   return useInfiniteQuery({
     queryKey: QUERY_KEYS.doctorsInfinite(filters),
@@ -80,9 +72,6 @@ export const useDoctorsInfinite = (filters: DoctorSearchFilters = {}) => {
   });
 };
 
-/**
- * Hook for fetching single doctor details
- */
 export const useDoctor = (id: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: QUERY_KEYS.doctor(id),
@@ -93,9 +82,6 @@ export const useDoctor = (id: string, enabled: boolean = true) => {
   });
 };
 
-/**
- * Hook for searching doctors by name
- */
 export const useDoctorSearch = (query: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.doctors, 'search', query],
@@ -105,9 +91,6 @@ export const useDoctorSearch = (query: string, enabled: boolean = true) => {
   });
 };
 
-/**
- * Hook for fetching doctors by specialty
- */
 export const useDoctorsBySpecialty = (
   specialtyId: string,
   page: number = 0,
@@ -122,9 +105,6 @@ export const useDoctorsBySpecialty = (
   });
 };
 
-/**
- * Hook for fetching featured doctors
- */
 export const useFeaturedDoctors = (limit: number = 5) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.featuredDoctors, limit],
@@ -134,11 +114,6 @@ export const useFeaturedDoctors = (limit: number = 5) => {
   });
 };
 
-// ============= SPECIALTY HOOKS =============
-
-/**
- * Hook for fetching all specialties
- */
 export const useSpecialties = () => {
   return useQuery({
     queryKey: QUERY_KEYS.specialties,
@@ -148,9 +123,6 @@ export const useSpecialties = () => {
   });
 };
 
-/**
- * Hook for fetching single specialty
- */
 export const useSpecialty = (id: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: QUERY_KEYS.specialty(id),
@@ -161,9 +133,6 @@ export const useSpecialty = (id: string, enabled: boolean = true) => {
   });
 };
 
-/**
- * Hook for fetching specialties with doctor count
- */
 export const useSpecialtiesWithCount = () => {
   return useQuery({
     queryKey: QUERY_KEYS.specialtiesWithCount,
@@ -173,9 +142,6 @@ export const useSpecialtiesWithCount = () => {
   });
 };
 
-/**
- * Hook for fetching popular specialties
- */
 export const usePopularSpecialties = (limit: number = 6) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.popularSpecialties, limit],
@@ -185,11 +151,6 @@ export const usePopularSpecialties = (limit: number = 6) => {
   });
 };
 
-// ============= APPOINTMENT HOOKS =============
-
-/**
- * Hook for fetching user's appointments
- */
 export const useMyAppointments = (status?: AppointmentStatus) => {
   return useQuery({
     queryKey: QUERY_KEYS.myAppointments(status),
@@ -200,9 +161,6 @@ export const useMyAppointments = (status?: AppointmentStatus) => {
   });
 };
 
-/**
- * Hook for fetching single appointment
- */
 export const useAppointment = (id: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: QUERY_KEYS.appointment(id),
@@ -213,9 +171,6 @@ export const useAppointment = (id: string, enabled: boolean = true) => {
   });
 };
 
-/**
- * Hook for fetching upcoming appointments
- */
 export const useUpcomingAppointments = (limit: number = 5) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.upcomingAppointments, limit],
@@ -227,9 +182,6 @@ export const useUpcomingAppointments = (limit: number = 5) => {
   });
 };
 
-/**
- * Hook for fetching today's appointments
- */
 export const useTodayAppointments = () => {
   return useQuery({
     queryKey: QUERY_KEYS.todayAppointments,
@@ -241,9 +193,6 @@ export const useTodayAppointments = () => {
   });
 };
 
-/**
- * Hook for fetching appointment history
- */
 export const useAppointmentHistory = (page: number = 0, size: number = 10) => {
   return useQuery({
     queryKey: [...QUERY_KEYS.appointmentHistory, page, size],
@@ -253,11 +202,6 @@ export const useAppointmentHistory = (page: number = 0, size: number = 10) => {
   });
 };
 
-// ============= MUTATION HOOKS =============
-
-/**
- * Hook for booking appointments
- */
 export const useBookAppointment = () => {
   const queryClient = useQueryClient();
 
@@ -287,9 +231,6 @@ export const useBookAppointment = () => {
   });
 };
 
-/**
- * Hook for cancelling appointments
- */
 export const useCancelAppointment = () => {
   const queryClient = useQueryClient();
 
@@ -297,13 +238,8 @@ export const useCancelAppointment = () => {
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       appointmentService.cancelAppointment(id, { reason }),
     onMutate: async ({ id }) => {
-      // Optimistically update the UI
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.appointments });
-
-      // Snapshot previous data
       const previousAppointments = queryClient.getQueryData(QUERY_KEYS.appointments);
-
-      // Optimistically update
       queryClient.setQueryData(QUERY_KEYS.appointments, (old: any) => {
         if (!old) return old;
         return old.filter((apt: Appointment) => apt.id !== id);
@@ -312,7 +248,6 @@ export const useCancelAppointment = () => {
       return { previousAppointments };
     },
     onSuccess: () => {
-      // Invalidate queries after successful cancellation
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.appointments });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.upcomingAppointments });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.todayAppointments });
@@ -324,7 +259,6 @@ export const useCancelAppointment = () => {
       );
     },
     onError: (error: any, variables, context) => {
-      // Rollback optimistic update on error
       if (context?.previousAppointments) {
         queryClient.setQueryData(QUERY_KEYS.appointments, context.previousAppointments);
       }
@@ -338,9 +272,6 @@ export const useCancelAppointment = () => {
   });
 };
 
-/**
- * Hook for rescheduling appointments
- */
 export const useRescheduleAppointment = () => {
   const queryClient = useQueryClient();
 
@@ -371,11 +302,6 @@ export const useRescheduleAppointment = () => {
   });
 };
 
-// ============= UTILITY HOOKS =============
-
-/**
- * Hook to invalidate all medical queries
- */
 export const useInvalidateQueries = () => {
   const queryClient = useQueryClient();
 
@@ -397,9 +323,6 @@ export const useInvalidateQueries = () => {
   };
 };
 
-/**
- * Hook for prefetching data
- */
 export const usePrefetch = () => {
   const queryClient = useQueryClient();
 
@@ -421,11 +344,6 @@ export const usePrefetch = () => {
   };
 };
 
-// ============= DOCTOR RECOMMENDATION HOOKS =============
-
-/**
- * Hook for getting doctor recommendations based on criteria
- */
 export const useDoctorRecommendations = (
   request: DoctorRecommendationRequest,
   enabled: boolean = true
@@ -439,9 +357,6 @@ export const useDoctorRecommendations = (
   });
 };
 
-/**
- * Hook for getting doctor recommendations based on symptoms
- */
 export const useSymptomBasedRecommendations = (
   symptoms: string,
   maxResults: number = 3,
@@ -456,9 +371,6 @@ export const useSymptomBasedRecommendations = (
   });
 };
 
-/**
- * Hook for getting simple doctor recommendations (fallback)
- */
 export const useSimpleDoctorRecommendations = (
   specialtyId?: number,
   symptoms?: string,
@@ -473,16 +385,12 @@ export const useSimpleDoctorRecommendations = (
   });
 };
 
-/**
- * Mutation hook for requesting doctor recommendations
- */
 export const useRecommendDoctors = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (request: DoctorRecommendationRequest) => recommendDoctors(request),
     onSuccess: (data, variables) => {
-      // Cache the result
       queryClient.setQueryData(
         QUERY_KEYS.recommendations(variables),
         data
@@ -500,11 +408,7 @@ export const useRecommendDoctors = () => {
     },
   });
 };
-// ============= AVAILABILITY HOOKS =============
 
-/**
- * Hook for fetching doctor availability schedule
- */
 export const useDoctorAvailability = (doctorId: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: QUERY_KEYS.availability(doctorId),
@@ -515,9 +419,6 @@ export const useDoctorAvailability = (doctorId: string, enabled: boolean = true)
   });
 };
 
-/**
- * Hook for fetching doctor availability for specific day
- */
 export const useDoctorAvailabilityByDay = (
   doctorId: string,
   dayOfWeek: number,
@@ -532,9 +433,6 @@ export const useDoctorAvailabilityByDay = (
   });
 };
 
-/**
- * Hook for fetching available time slots for a specific date
- */
 export const useAvailableTimeSlots = (
   doctorId: string,
   date: string,

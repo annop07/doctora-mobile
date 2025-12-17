@@ -21,9 +21,6 @@ export interface DoctorsResponse {
 }
 
 class DoctorService {
-  /**
-   * Transform backend doctor data to frontend format
-   */
   private transformDoctor(doctor: any): Doctor {
     return {
       ...doctor,
@@ -43,10 +40,6 @@ class DoctorService {
     };
   }
 
-  /**
-   * ดึงรายการแพทย์ทั้งหมดพร้อม pagination และ filtering
-   * GET /api/doctors
-   */
   async getDoctors(params: DoctorSearchParams = {}): Promise<DoctorsResponse> {
     const queryParams = new URLSearchParams();
 
@@ -68,28 +61,16 @@ class DoctorService {
     };
   }
 
-  /**
-   * ดึงข้อมูลแพทย์รายบุคคล
-   * GET /api/doctors/{id}
-   */
   async getDoctorById(id: string | number): Promise<Doctor> {
     const response = await apiClient.get<any>(`/doctors/${id}`);
     return this.transformDoctor(response);
   }
 
-  /**
-   * ค้นหาแพทย์ด้วยชื่อ
-   * GET /api/doctors/search?name={name}
-   */
   async searchDoctorsByName(name: string): Promise<Doctor[]> {
-    const response = await apiClient.get<{doctors: any[]}>(`/doctors/search?name=${encodeURIComponent(name)}`);
+    const response = await apiClient.get<{ doctors: any[] }>(`/doctors/search?name=${encodeURIComponent(name)}`);
     return response.doctors?.map((d: any) => this.transformDoctor(d)) || [];
   }
 
-  /**
-   * ค้นหาแพทย์ด้วยเงื่อนไขต่างๆ (Advanced Search)
-   * GET /api/doctors with multiple filters
-   */
   async searchDoctors(filters: DoctorSearchFilters & { page?: number; size?: number }): Promise<DoctorsResponse> {
     const params: DoctorSearchParams = {
       page: filters.page || 0,
@@ -107,7 +88,7 @@ class DoctorService {
     if (filters.sortBy) {
       switch (filters.sortBy) {
         case 'name':
-          params.sort = filters.sortOrder === 'desc' ? 'id,desc' : 'id'; // ใช้ id แทน user.firstName
+          params.sort = filters.sortOrder === 'desc' ? 'id,desc' : 'id';
           break;
         case 'experience':
           params.sort = filters.sortOrder === 'desc' ? 'experienceYears,desc' : 'experienceYears';
@@ -117,21 +98,16 @@ class DoctorService {
           break;
         case 'rating':
         default:
-          params.sort = filters.sortOrder === 'desc' ? 'id,desc' : 'id'; // Default sort by id
+          params.sort = filters.sortOrder === 'desc' ? 'id,desc' : 'id';
           break;
       }
     } else {
-      // Default sort when no sortBy is specified
       params.sort = 'id';
     }
 
     return this.getDoctors(params);
   }
 
-  /**
-   * ดึงแพทย์ตามแผนก
-   * GET /api/doctors/specialty/{specialtyId}
-   */
   async getDoctorsBySpecialty(
     specialtyId: string | number,
     page: number = 0,
@@ -161,19 +137,11 @@ class DoctorService {
     };
   }
 
-  /**
-   * ดึงสถิติแพทย์ทั้งหมด
-   * GET /api/doctors/stats
-   */
   async getDoctorStats(): Promise<DoctorStats> {
     const response = await apiClient.get<DoctorStats>('/doctors/stats');
     return response;
   }
 
-  /**
-   * Helper method สำหรับ infinite scroll
-   * ใช้กับ React Query infinite queries
-   */
   async getDoctorsInfinite(
     pageParam: number = 0,
     filters: DoctorSearchFilters = {},
@@ -198,18 +166,8 @@ class DoctorService {
     };
   }
 
-  /**
-   * ดึงแพทย์ที่แนะนำ (Featured Doctors)
-   * ใช้ API เดียวกับ getDoctors แต่ sort ด้วย rating และจำกัด 3-5 คน
-   */
   async getFeaturedDoctors(limit: number = 5): Promise<Doctor[]> {
-    const response = await this.getDoctors({
-      page: 0,
-      size: limit,
-      sort: 'id,desc' // จะเปลี่ยนเป็น rating เมื่อ backend รองรับ
-    });
-
-    // Doctors already transformed in getDoctors()
+    const response = await this.getDoctors({ page: 0, size: limit, sort: 'id,desc' });
     return response.doctors;
   }
 }

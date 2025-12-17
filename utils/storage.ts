@@ -8,7 +8,6 @@ const STORAGE_KEYS = {
 } as const;
 
 class StorageService {
-  // Token Management
   async setAuthToken(token: string): Promise<void> {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
@@ -35,7 +34,6 @@ class StorageService {
     }
   }
 
-  // User Data Management
   async setUserData(userData: User): Promise<void> {
     try {
       const jsonData = JSON.stringify(userData);
@@ -64,7 +62,6 @@ class StorageService {
     }
   }
 
-  // Remember Email (for login form)
   async setRememberEmail(email: string): Promise<void> {
     try {
       await AsyncStorage.setItem(STORAGE_KEYS.REMEMBER_EMAIL, email);
@@ -90,7 +87,6 @@ class StorageService {
     }
   }
 
-  // Clear All Data (for logout)
   async clearAllAuthData(): Promise<void> {
     try {
       await AsyncStorage.multiRemove([
@@ -102,7 +98,6 @@ class StorageService {
     }
   }
 
-  // Check if user is logged in
   async isLoggedIn(): Promise<boolean> {
     try {
       const token = await this.getAuthToken();
@@ -114,7 +109,6 @@ class StorageService {
     }
   }
 
-  // Get all stored keys (for debugging)
   async getAllKeys(): Promise<string[]> {
     try {
       const keys = await AsyncStorage.getAllKeys();
@@ -125,7 +119,6 @@ class StorageService {
     }
   }
 
-  // Clear all storage (for development/debugging)
   async clearAllStorage(): Promise<void> {
     try {
       await AsyncStorage.clear();
@@ -135,10 +128,8 @@ class StorageService {
   }
 }
 
-// Export singleton instance
 export const storageService = new StorageService();
 
-// Export individual functions for convenience
 export const {
   setAuthToken,
   getAuthToken,

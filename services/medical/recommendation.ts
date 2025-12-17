@@ -19,9 +19,6 @@ export interface DoctorRecommendationResponse {
   message: string;
 }
 
-/**
- * แนะนำแพทย์อัตโนมัติตามอาการและความต้องการ
- */
 export const recommendDoctors = async (
   request: DoctorRecommendationRequest
 ): Promise<DoctorRecommendationResponse> => {
@@ -55,24 +52,19 @@ export const recommendDoctors = async (
   }
 };
 
-/**
- * แนะนำแพทย์โดยใช้ข้อมูลเบื้องต้น (สำหรับ fallback)
- */
 export const getSimpleDoctorRecommendations = async (
   specialtyId?: number,
   symptoms?: string
 ): Promise<Doctor[]> => {
   try {
-    // ใช้ API ค้นหาหมอปกติ แต่เรียงตามคะแนนและประสบการณ์
     const filters: DoctorSearchFilters = {
       specialtyId: specialtyId?.toString(),
       sortBy: 'rating',
       sortOrder: 'desc',
       page: 0,
-      size: 5 // จำกัดเฉพาะ 5 คนแรก
+      size: 5
     };
 
-    // เรียก API ค้นหาหมอ
     const response = await apiClient.get<{
       doctors: Doctor[];
       totalItems: number;
@@ -88,21 +80,17 @@ export const getSimpleDoctorRecommendations = async (
   }
 };
 
-/**
- * แนะนำแพทย์ตามอาการเฉพาะ
- */
 export const recommendDoctorsBySymptoms = async (
   symptoms: string,
   maxResults: number = 3
 ): Promise<Doctor[]> => {
   try {
-    // แมพอาการเป็น specialty ID
     const specialtyMapping = getSpecialtyFromSymptoms(symptoms);
 
     const request: DoctorRecommendationRequest = {
       specialtyId: specialtyMapping.specialtyId,
       symptoms: symptoms,
-      maxFee: 2000, // ค่าบริการไม่เกิน 2000 บาท
+      maxFee: 2000,
       urgentCase: checkIfUrgent(symptoms)
     };
 
@@ -111,7 +99,6 @@ export const recommendDoctorsBySymptoms = async (
   } catch (error) {
     console.error('❌ Error getting symptom-based recommendations:', error);
 
-    // Fallback: ใช้การค้นหาแบบธรรมดา
     if (specialtyMapping?.specialtyId) {
       return await getSimpleDoctorRecommendations(specialtyMapping.specialtyId, symptoms);
     }
@@ -120,13 +107,9 @@ export const recommendDoctorsBySymptoms = async (
   }
 };
 
-/**
- * แมพอาการเป็น specialty ID
- */
 const getSpecialtyFromSymptoms = (symptoms: string): { specialtyId?: number; confidence: number } => {
   const symptomLower = symptoms.toLowerCase();
 
-  // แมพคำสำคัญกับ specialty ID
   const symptomMap = [
     {
       keywords: ['ไข้', 'ปวดหัว', 'ปวดท้อง', 'ท้องเสีย', 'ไอ', 'เจ็บคอ', 'เหนื่อย', 'อ่อนเพลีย'],
@@ -180,7 +163,6 @@ const getSpecialtyFromSymptoms = (symptoms: string): { specialtyId?: number; con
     }
   ];
 
-  // หาความตรงกับอาการ
   let bestMatch = { specialtyId: undefined, confidence: 0 };
 
   for (const mapping of symptomMap) {
@@ -205,9 +187,6 @@ const getSpecialtyFromSymptoms = (symptoms: string): { specialtyId?: number; con
   return bestMatch;
 };
 
-/**
- * ตรวจสอบว่าเป็นกรณีเร่งด่วนหรือไม่
- */
 const checkIfUrgent = (symptoms: string): boolean => {
   const urgentKeywords = [
     'ฉุกเฉิน', 'เร่งด่วน', 'เจ็บมาก', 'ปวดมาก', 'ไข้สูง',

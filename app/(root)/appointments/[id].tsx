@@ -6,11 +6,12 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { Button, Card } from "@/components/ui";
-import { mockAppointments } from "@/constants/mockMedicalData";
+import { useAppointmentById, useCancelAppointment } from "@/services/appointments/hooks";
 import { AppointmentStatus } from "@/types/medical";
 import icons from "@/constants/icons";
 import images from "@/constants/images";
@@ -19,15 +20,34 @@ export default function AppointmentDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Find appointment by ID
-  const appointment = mockAppointments.find((apt) => apt.id === id);
+  // ดึงข้อมูลนัดหมายจาก API
+  const { data: appointment, isLoading: isLoadingAppointment, notFound } = useAppointmentById(id || '');
+  const cancelMutation = useCancelAppointment();
 
-  if (!appointment) {
+  // Loading state
+  if (isLoadingAppointment) {
     return (
       <SafeAreaView className="bg-white h-full">
         <View className="flex-1 items-center justify-center">
-          <Text className="text-lg font-rubik-semiBold text-text-primary">
+          <ActivityIndicator size="large" color="#0891b2" />
+          <Text className="text-base font-rubik text-secondary-600 mt-4">
+            กำลังโหลดข้อมูล...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Not found state
+  if (notFound || !appointment) {
+    return (
+      <SafeAreaView className="bg-white h-full">
+        <View className="flex-1 items-center justify-center px-6">
+          <Text className="text-lg font-rubik-semiBold text-text-primary text-center">
             ไม่พบข้อมูลการนัดหมาย
+          </Text>
+          <Text className="text-sm font-rubik text-secondary-500 text-center mt-2">
+            การนัดหมายนี้อาจถูกลบหรือไม่มีอยู่ในระบบ
           </Text>
           <Button
             title="กลับ"
@@ -41,7 +61,10 @@ export default function AppointmentDetail() {
     );
   }
 
-  const doctorName = `${appointment.doctor.user.firstName} ${appointment.doctor.user.lastName}`;
+  // รองรับทั้งโครงสร้างจาก API และ mock data
+  const doctorName = appointment.doctor.name ||
+    `${appointment.doctor.firstName || ''} ${appointment.doctor.lastName || ''}`.trim() ||
+    'ไม่ระบุชื่อแพทย์';
   const appointmentDate = new Date(appointment.appointmentDateTime);
   const isUpcoming = appointmentDate > new Date();
   const canCancel =

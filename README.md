@@ -1,218 +1,50 @@
-# 📱 Cat Tinder Frontend
+## Doctora mobile app Project
 
-แอปพลิเคชัน React Native สำหรับ Cat Tinder - แอปจับคู่แมว ที่ช่วยให้เจ้าของแมวค้นหาคู่ครองหรือเพื่อนสำหรับแมวของตน
+This project is a full-stack application for online doctor appointment booking, featuring a mobile application built with React Native alongside a web-based system.
+The mobile app allows patients to search for doctors by specialty, view real-time availability, and book appointments directly from their devices, while doctors and administrators manage schedules, appointments, and system data through the backend services.
+The system is built using a 3-tier architecture, with a React Native mobile application and Next.js web frontend, powered by a Spring Boot (Java) backend and PostgreSQL database, communicating via REST APIs secured with JWT authentication.
+(System-oriented full-stack web and mobile application project)
 
-## 🛠 เทคโนโลยีที่ใช้
+## Backend
+https://github.com/annop07/doctora-spring-boot.git
 
-- **React Native 0.81.4** - Mobile App Framework
-- **Expo ~54.0.8** - Development Platform
-- **Expo Router v6** - File-based Navigation
-- **NativeWind 4.2.1** - Tailwind CSS for React Native
-- **TypeScript** - Type Safety
-- **React 19.1.0** - Latest React Features
+## Screenshots
 
-## 📁 โครงสร้างโปรเจค
+### 1. Login
+![Login](doctora-mobile-photo/1-login.PNG)
 
-```
-front_cat-tinder/
-├── app/                    # หน้าต่างๆ ของแอป (Expo Router)
-│   ├── _layout.tsx        # Root layout + CSS imports
-│   ├── index.tsx          # หน้าแรก (Welcome screen)
-│   └── globals.css        # Tailwind CSS directives
-├── app-example/           # ตัวอย่างจาก Expo (ไม่ใช้)
-├── assets/
-│   └── images/            # รูปภาพแอป (icons, splash)
-├── components/            # Components ที่จะสร้าง
-├── services/              # API services ที่จะสร้าง
-├── global.css             # Main Tailwind CSS file
-├── tailwind.config.js     # TailwindCSS configuration
-├── metro.config.js        # Metro bundler + NativeWind config
-└── package.json
-```
+### 2. Register
+![Register](doctora-mobile-photo/2-register.PNG)
 
-## 🚀 การติดตั้งและเริ่มใช้งาน
+### 3. Main Dashboard
+![Main Dashboard](doctora-mobile-photo/3-mainidashboard.PNG)
 
-### 1. ติดตั้ง Dependencies
+### 4. Auto Selected Doctor (AI Recommendation)
+![Auto Selected Doctor](doctora-mobile-photo/4-auto-selected-doctor.PNG)
 
-```bash
-cd front_cat-tinder
-npm install
-```
+### 5. Select Date & Time
+![Select Date Time](doctora-mobile-photo/5-select-date-time.PNG)
 
-### 2. เริ่มแอป
+### 6. Patient Information
+![Patient Info](doctora-mobile-photo/6-patient-info.PNG)
+![Patient Info 2](doctora-mobile-photo/6-2-patient-info.PNG)
 
-```bash
-# เริ่ม Expo development server
-npm start
-# หรือ
-npx expo start
-```
+### 7. Appointment Summary
+![Appointment Summary](doctora-mobile-photo/7-summary-appoiment.PNG)
+![Appointment Summary 2](doctora-mobile-photo/7.2-summary-appoiment.PNG)
 
-### 3. เปิดแอปใน
+### 8. Appointment List
+![Appointment List](doctora-mobile-photo/8-Appoiment-list.PNG)
 
-- **📱 Expo Go** - สแกน QR code ด้วย Expo Go app
-- **🤖 Android Emulator** - กด `a` ใน terminal
-- **🍎 iOS Simulator** - กด `i` ใน terminal
-- **🌐 Web Browser** - กด `w` ใน terminal
+### 9. Doctor Information
+![Doctor Info](doctora-mobile-photo/9-doctor-info.PNG)
 
-## 🎨 Styling
+### 10. Doctor Schedule
+![Doctor Schedule](doctora-mobile-photo/10-doctor-schedule.PNG)
 
-แอปใช้ **NativeWind** (Tailwind CSS for React Native):
+### 11. Appointment Detail
+![Appointment Info](doctora-mobile-photo/11-appoiment-info.PNG)
 
-```typescript
-// ตัวอย่างการใช้งาน
-<View className="flex-1 justify-center items-center bg-white">
-  <Text className="text-2xl font-bold text-purple-600">
-    Cat Tinder
-  </Text>
-</View>
-```
-
-## 📱 Features ที่จะพัฒนา
-
-### 🔐 Authentication
-- [ ] Login/Register screens
-- [ ] User profile management
-- [ ] JWT token handling
-
-### 🐱 Cat Management
-- [ ] Add cat profile
-- [ ] Upload cat photos
-- [ ] Edit cat information
-- [ ] View my cats
-
-### 💖 Core Features
-- [ ] Cat feed (swipe interface)
-- [ ] Like/Pass functionality
-- [ ] Match notifications
-- [ ] Chat with matches
-
-### 🔍 Advanced Features
-- [ ] Location-based filtering
-- [ ] Search by breed/age
-- [ ] Push notifications
-- [ ] Profile verification
-
-## 🔗 การเชื่อมต่อ Backend
-
-แอปจะเชื่อมต่อกับ Backend API ที่ `http://localhost:4000`
-
-### API Services Structure (จะสร้าง)
-```
-services/
-├── api/
-│   ├── index.ts          # Base API configuration
-│   ├── auth.ts           # Authentication APIs
-│   ├── cats.ts           # Cat management
-│   └── types.ts          # TypeScript interfaces
-├── hooks/
-│   ├── useAuth.ts        # Authentication hook
-│   └── useCats.ts        # Cat data management
-└── utils/
-    └── storage.ts        # AsyncStorage utilities
-```
-
-## 🔧 Scripts
-
-```bash
-npm start          # เริ่ม development server
-npm run android    # เปิดใน Android emulator
-npm run ios        # เปิดใน iOS simulator
-npm run web        # เปิดใน web browser
-npm run lint       # ตรวจสอบ code style
-```
-
-## 📱 Expo Configuration
-
-- **App Name:** front_cat-tinder
-- **Scheme:** restate
-- **Platforms:** iOS, Android, Web
-- **Features:**
-  - New Architecture enabled
-  - Typed Routes
-  - React Compiler enabled
-
-## 🛠 Development Tools
-
-### Hot Reload
-โค้ดจะ reload อัตโนมัติเมื่อมีการเปลี่ยนแปลง
-
-### Debugging
-- **Flipper** - Native debugging
-- **React DevTools** - Component debugging
-- **Network Inspector** - API debugging
-
-### TypeScript
-Project ใช้ TypeScript พร้อม strict mode:
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "paths": {
-      "@/*": ["./*"]
-    }
-  }
-}
-```
-
-## 🎯 ขั้นตอนการพัฒนาถัดไป
-
-### Phase 1: Authentication (Week 1)
-1. Install HTTP client (axios)
-2. Create auth screens (Login/Register)
-3. Implement JWT token management
-4. Create auth context
-
-### Phase 2: Cat Management (Week 2)
-1. Create cat profile screens
-2. Implement photo upload
-3. Add cat listing/editing
-4. Connect to backend APIs
-
-### Phase 3: Swipe Feature (Week 3)
-1. Create swipe interface
-2. Implement like/pass functionality
-3. Add match detection
-4. Basic messaging
-
-### Phase 4: Polish (Week 4)
-1. Add animations
-2. Improve UI/UX
-3. Add error handling
-4. Performance optimization
-
-## 🐛 Troubleshooting
-
-### Metro bundler issues
-```bash
-npx expo start --clear
-```
-
-### NativeWind not working
-```bash
-# ตรวจสอบ tailwind.config.js และ metro.config.js
-npm run web  # ทดสอบใน web ก่อน
-```
-
-### Expo Go connection issues
-- ตรวจสอบให้แน่ใจว่าเครื่องและโทรศัพท์อยู่ wifi เดียวกัน
-- ใช้ tunnel mode: `npx expo start --tunnel`
-
-## 🤝 การมีส่วนร่วม
-
-1. Fork โปรเจค
-2. สร้าง feature branch: `git checkout -b feature/new-feature`
-3. Commit การเปลี่ยนแปลง: `git commit -m "Add new feature"`
-4. Push ไป branch: `git push origin feature/new-feature`
-5. สร้าง Pull Request
-
-## 📚 เอกสารเพิ่มเติม
-
-- [Expo Documentation](https://docs.expo.dev/)
-- [React Native Documentation](https://reactnative.dev/)
-- [NativeWind Documentation](https://www.nativewind.dev/)
-- [Expo Router Documentation](https://docs.expo.dev/router/introduction/)
-
-## 📞 ติดต่อ
-
-หากมีปัญหาหรือข้อสงสัย กรุณาสร้าง Issue ใน GitHub repository
+### 12. Manual Select Doctor
+![Manual Select Doctor](doctora-mobile-photo/12-manual-select-doctor.PNG)
+![Manual Select Doctor 2](doctora-mobile-photo/12.2-manual-select-doctor.PNG)

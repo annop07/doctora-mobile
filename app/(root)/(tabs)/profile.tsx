@@ -53,6 +53,7 @@ const Profile = () => {
   // Mock stats for display
   const upcomingCount = 2;
   const completedCount = 5;
+  
 
   const handleLogout = async () => {
     await logout();

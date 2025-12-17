@@ -18,37 +18,21 @@ export interface SpecialtyDetailResponse extends Specialty {
 }
 
 class SpecialtyService {
-  /**
-   * ดึงรายการแผนกทั้งหมด
-   * GET /api/specialties
-   */
   async getSpecialties(): Promise<Specialty[]> {
     const response = await apiClient.get<SpecialtiesResponse>('/specialties');
     return response.specialties;
   }
 
-  /**
-   * ดึงข้อมูลแผนกตาม ID พร้อมจำนวนแพทย์
-   * GET /api/specialties/{id}
-   */
   async getSpecialtyById(id: string | number): Promise<SpecialtyDetailResponse> {
     const response = await apiClient.get<SpecialtyDetailResponse>(`/specialties/${id}`);
     return response;
   }
 
-  /**
-   * ดึงรายการแผนกพร้อมจำนวนแพทย์ในแต่ละแผนก
-   * GET /api/specialties/with-count
-   */
   async getSpecialtiesWithDoctorCount(): Promise<SpecialtyWithDoctorCount[]> {
     const response = await apiClient.get<SpecialtiesWithCountResponse>('/specialties/with-count');
     return response.specialties;
   }
 
-  /**
-   * ค้นหาแผนกด้วยชื่อ
-   * GET /api/specialties/search?name={name}
-   */
   async searchSpecialtiesByName(name: string): Promise<Specialty[]> {
     const response = await apiClient.get<SpecialtiesResponse>(
       `/specialties/search?name=${encodeURIComponent(name)}`
@@ -56,10 +40,6 @@ class SpecialtyService {
     return response.specialties;
   }
 
-  /**
-   * ดึงแผนกยอดนิยม (แผนกที่มีแพทย์เยอะที่สุด)
-   * ใช้ API เดียวกับ getSpecialtiesWithDoctorCount แต่ sort ด้วย doctorCount
-   */
   async getPopularSpecialties(limit: number = 6): Promise<SpecialtyWithDoctorCount[]> {
     const specialties = await this.getSpecialtiesWithDoctorCount();
 
@@ -69,9 +49,6 @@ class SpecialtyService {
       .slice(0, limit);
   }
 
-  /**
-   * ดึงแผนกที่มีแพทย์พร้อมให้บริการ (doctorCount > 0)
-   */
   async getAvailableSpecialties(): Promise<SpecialtyWithDoctorCount[]> {
     const specialties = await this.getSpecialtiesWithDoctorCount();
 
@@ -79,9 +56,6 @@ class SpecialtyService {
     return specialties.filter(specialty => specialty.doctorCount > 0);
   }
 
-  /**
-   * Helper method สำหรับ map specialty data ให้ตรงกับ frontend format
-   */
   transformSpecialtyData(specialty: any): Specialty {
     return {
       id: specialty.id.toString(),
@@ -91,9 +65,6 @@ class SpecialtyService {
     };
   }
 
-  /**
-   * Helper method สำหรับ map specialty with count data
-   */
   transformSpecialtyWithCountData(specialty: any): SpecialtyWithDoctorCount {
     return {
       ...this.transformSpecialtyData(specialty),
@@ -101,10 +72,6 @@ class SpecialtyService {
     };
   }
 
-  /**
-   * Cache management - invalidate specialty cache
-   * ใช้เมื่อมีการเปลี่ยนแปลงข้อมูลแพทย์หรือแผนก
-   */
   invalidateCache(): void {
     // จะใช้กับ React Query queryClient.invalidateQueries(['specialties'])
     console.log('Specialty cache invalidated');

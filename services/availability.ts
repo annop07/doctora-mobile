@@ -23,10 +23,6 @@ export interface TimeSlotCheckResponse {
 }
 
 class AvailabilityService {
-  /**
-   * ดูตารางเวลาทำงานของหมอ
-   * GET /api/availability/doctor/{doctorId}
-   */
   async getDoctorAvailabilities(doctorId: string): Promise<DoctorAvailability[]> {
     const response = await apiClient.get<DoctorAvailability[]>(
       `/availability/doctor/${doctorId}`
@@ -34,10 +30,6 @@ class AvailabilityService {
     return response;
   }
 
-  /**
-   * ดูตารางเวลาทำงานของหมอในวันเจาะจง
-   * GET /api/availability/doctor/{doctorId}?dayOfWeek=1
-   */
   async getDoctorAvailabilitiesByDay(
     doctorId: string,
     dayOfWeek: number
@@ -48,10 +40,6 @@ class AvailabilityService {
     return response;
   }
 
-  /**
-   * ดูเวลาที่ถูกจองแล้วของหมอในวันที่เจาะจง
-   * GET /api/appointments/doctor/{doctorId}/booked-slots?date=YYYY-MM-DD
-   */
   async getBookedTimeSlots(doctorId: string, date: string): Promise<string[]> {
     try {
       const response = await apiClient.get<{
@@ -83,10 +71,6 @@ class AvailabilityService {
     }
   }
 
-  /**
-   * ดูช่วงเวลาว่างของหมอในวันที่เจาะจง
-   * Generate slots from doctor's schedule and filter out booked times
-   */
   async getAvailableTimeSlots(
     doctorId: string,
     date: string // YYYY-MM-DD format
@@ -140,10 +124,6 @@ class AvailabilityService {
     }
   }
 
-  /**
-   * ตรวจสอบว่าช่วงเวลาว่างหรือไม่
-   * GET /api/availability/doctor/{doctorId}/check?date=2024-01-15&time=09:30
-   */
   async isTimeSlotAvailable(
     doctorId: string,
     date: string, // YYYY-MM-DD format
@@ -155,9 +135,6 @@ class AvailabilityService {
     return response;
   }
 
-  /**
-   * Helper: แปลง Date object เป็น string format สำหรับ API
-   */
   formatDateForApi(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -165,17 +142,11 @@ class AvailabilityService {
     return `${year}-${month}-${day}`;
   }
 
-  /**
-   * Helper: แปลงวันในสัปดาห์จาก JS (0=Sunday) เป็น Backend format (1=Monday)
-   */
   jsDateToDayOfWeek(date: Date): number {
     const jsDay = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
     return jsDay === 0 ? 7 : jsDay; // Convert to 1=Monday, ..., 7=Sunday
   }
 
-  /**
-   * Helper: สร้าง time slots ทุก 1 ชั่วโมงระหว่างเวลาที่กำหนด
-   */
   generateTimeSlots(startTime: string, endTime: string): string[] {
     const slots: string[] = [];
 
@@ -197,24 +168,15 @@ class AvailabilityService {
     return slots;
   }
 
-  /**
-   * Helper: ตรวจสอบว่าเวลาอยู่ในช่วงที่กำหนดหรือไม่
-   */
   isTimeInRange(time: string, startTime: string, endTime: string): boolean {
     return time >= startTime && time < endTime;
   }
 
-  /**
-   * Helper: แปลงหมายเลขวันเป็นชื่อวัน (ภาษาไทย)
-   */
   getDayNameTh(dayOfWeek: number): string {
     const days = ['', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์', 'อาทิตย์'];
     return days[dayOfWeek] || 'ไม่ระบุ';
   }
 
-  /**
-   * Helper: แปลงเวลา 24 ชม. เป็นรูปแบบแสดงผล (เช่น 09:00 น.)
-   */
   formatTimeForDisplay(time: string): string {
     return `${time} น.`;
   }

@@ -13,19 +13,12 @@ import type {
 } from '@/types';
 import { Alert } from 'react-native';
 
-// Enhanced hooks with background sync and optimized caching
-
-// =============================================================================
-// DOCTORS HOOKS
-// =============================================================================
-
 export const useDoctors = (filters?: DoctorSearchFilters) => {
   return useQuery({
     queryKey: queryKeys.doctorSearch(filters || {}),
     queryFn: () => doctorService.getDoctors(filters),
     ...queryOptions.doctors,
     enabled: true,
-    // Optimistic background refetch every 5 minutes
     refetchInterval: 5 * 60 * 1000,
     refetchIntervalInBackground: false
   });
@@ -58,10 +51,6 @@ export const useDoctorsBySpecialty = (specialtyId: string) => {
   });
 };
 
-// =============================================================================
-// SPECIALTIES HOOKS
-// =============================================================================
-
 export const useSpecialties = () => {
   return useQuery({
     queryKey: queryKeys.specialties,
@@ -89,10 +78,6 @@ export const useSpecialty = (id: string) => {
   });
 };
 
-// =============================================================================
-// APPOINTMENTS HOOKS
-// =============================================================================
-
 export const useMyAppointments = (status?: AppointmentStatus) => {
   return useQuery({
     queryKey: queryKeys.myAppointments(status),
@@ -117,8 +102,7 @@ export const useUpcomingAppointments = (limit = 3) => {
         .sort((a, b) => new Date(a.appointmentDateTime).getTime() - new Date(b.appointmentDateTime).getTime())
         .slice(0, limit);
     },
-    // Real-time updates for upcoming appointments
-    refetchInterval: 15 * 1000, // 15 seconds
+    refetchInterval: 15 * 1000,
     refetchOnWindowFocus: true
   });
 };
@@ -132,23 +116,16 @@ export const useAppointment = (id: string) => {
   });
 };
 
-// =============================================================================
-// MUTATIONS WITH OPTIMISTIC UPDATES
-// =============================================================================
-
 export const useBookAppointment = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (request: BookAppointmentRequest) => appointmentService.bookAppointment(request),
     onMutate: async (newAppointment) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: queryKeys.appointments });
 
       // Snapshot the previous value
       const previousAppointments = queryClient.getQueryData(queryKeys.myAppointments());
-
-      // Optimistically update to the new value
       const optimisticAppointment = {
         id: `temp-${Date.now()}`,
         doctorId: parseInt(newAppointment.doctorId),
@@ -157,7 +134,6 @@ export const useBookAppointment = () => {
         notes: newAppointment.notes || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        // Mock doctor data for optimistic update
         doctor: {
           id: parseInt(newAppointment.doctorId),
           firstName: 'Doctor',
@@ -174,18 +150,15 @@ export const useBookAppointment = () => {
         });
       }
 
-      // Return a context object with the snapshotted value
       return { previousAppointments };
     },
     onSuccess: (data, variables, context) => {
-      // Invalidate and refetch appointments
       queryClient.invalidateQueries({ queryKey: queryKeys.appointments });
       queryClient.invalidateQueries({ queryKey: queryKeys.upcomingAppointments() });
 
       Alert.alert('จองนัดหมายสำเร็จ', 'การจองนัดหมายของคุณถูกส่งไปยังแพทย์แล้ว รอการยืนยัน');
     },
     onError: (error, newAppointment, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousAppointments) {
         queryClient.setQueryData(queryKeys.myAppointments(), context.previousAppointments);
       }
@@ -193,7 +166,6 @@ export const useBookAppointment = () => {
       Alert.alert('ไม่สามารถจองนัดหมายได้', 'กรุณาลองใหม่อีกครั้ง');
     },
     onSettled: () => {
-      // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: queryKeys.appointments });
     }
   });
@@ -205,13 +177,8 @@ export const useCancelAppointment = () => {
   return useMutation({
     mutationFn: (id: string) => appointmentService.cancelAppointment(id),
     onMutate: async (appointmentId) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: queryKeys.appointments });
-
-      // Snapshot the previous value
       const previousAppointments = queryClient.getQueryData(queryKeys.myAppointments());
-
-      // Optimistically update - remove the appointment
       if (previousAppointments && 'appointments' in previousAppointments) {
         const updatedAppointments = (previousAppointments.appointments || []).map(apt =>
           apt.id === appointmentId ? { ...apt, status: 'CANCELLED' as AppointmentStatus } : apt
@@ -232,7 +199,6 @@ export const useCancelAppointment = () => {
       Alert.alert('ยกเลิกนัดหมายแล้ว', 'การนัดหมายของคุณถูกยกเลิกเรียบร้อยแล้ว');
     },
     onError: (error, appointmentId, context) => {
-      // Revert optimistic update
       if (context?.previousAppointments) {
         queryClient.setQueryData(queryKeys.myAppointments(), context.previousAppointments);
       }
@@ -245,23 +211,16 @@ export const useCancelAppointment = () => {
   });
 };
 
-// =============================================================================
-// UTILITY HOOKS
-// =============================================================================
-
-// Hook for prefetching frequently accessed data
 export const usePrefetchCriticalData = () => {
   const queryClient = useQueryClient();
 
   const prefetchData = () => {
-    // Prefetch specialties (rarely changes)
     queryClient.prefetchQuery({
       queryKey: queryKeys.specialties,
       queryFn: () => specialtyService.getSpecialties(),
       staleTime: queryOptions.specialties.staleTime
     });
 
-    // Prefetch featured doctors
     queryClient.prefetchQuery({
       queryKey: queryKeys.featuredDoctors(3),
       queryFn: () => doctorService.getDoctors({ limit: 3, featured: true }),
@@ -272,7 +231,6 @@ export const usePrefetchCriticalData = () => {
   return { prefetchData };
 };
 
-// Hook for manually triggering data refresh
 export const useRefreshAllData = () => {
   const queryClient = useQueryClient();
 
@@ -297,7 +255,6 @@ export const useRefreshAllData = () => {
   };
 };
 
-// Hook for getting query cache stats (for debugging)
 export const useQueryStats = () => {
   const queryClient = useQueryClient();
 
@@ -316,5 +273,4 @@ export const useQueryStats = () => {
   return { getStats };
 };
 
-// Export all existing hooks for backward compatibility
 export * from './hooks';
