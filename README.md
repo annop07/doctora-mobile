@@ -11,40 +11,40 @@ https://github.com/annop07/doctora-spring-boot.git
 ## Screenshots
 
 ### 1. Login
-![Login](doctora-mobile-photo/1-login.PNG)
+<img src="doctora-mobile-photo/1-login.PNG" width="250">
 
 ### 2. Register
-![Register](doctora-mobile-photo/2-register.PNG)
+<img src="doctora-mobile-photo/2-register.PNG" width="250">
 
 ### 3. Main Dashboard
-![Main Dashboard](doctora-mobile-photo/3-mainidashboard.PNG)
+<img src="doctora-mobile-photo/3-mainidashboard.PNG" width="250">
 
 ### 4. Auto Selected Doctor (AI Recommendation)
-![Auto Selected Doctor](doctora-mobile-photo/4-auto-selected-doctor.PNG)
+<img src="doctora-mobile-photo/4-auto-selected-doctor.PNG" width="250">
 
 ### 5. Select Date & Time
-![Select Date Time](doctora-mobile-photo/5-select-date-time.PNG)
+<img src="doctora-mobile-photo/5-select-date-time.PNG" width="250">
 
 ### 6. Patient Information
-![Patient Info](doctora-mobile-photo/6-patient-info.PNG)
-![Patient Info 2](doctora-mobile-photo/6-2-patient-info.PNG)
+<img src="doctora-mobile-photo/6-patient-info.PNG" width="250">
+<img src="doctora-mobile-photo/6-2-patient-info.PNG" width="250">
 
 ### 7. Appointment Summary
-![Appointment Summary](doctora-mobile-photo/7-summary-appoiment.PNG)
-![Appointment Summary 2](doctora-mobile-photo/7.2-summary-appoiment.PNG)
+<img src="doctora-mobile-photo/7-summary-appoiment.PNG" width="250">
+<img src="doctora-mobile-photo/7.2-summary-appoiment.PNG" width="250">
 
 ### 8. Appointment List
-![Appointment List](doctora-mobile-photo/8-Appoiment-list.PNG)
+<img src="doctora-mobile-photo/8-Appoiment-list.PNG" width="250">
 
 ### 9. Doctor Information
-![Doctor Info](doctora-mobile-photo/9-doctor-info.PNG)
+<img src="doctora-mobile-photo/9-doctor-info.PNG" width="250">
 
 ### 10. Doctor Schedule
-![Doctor Schedule](doctora-mobile-photo/10-doctor-schedule.PNG)
+<img src="doctora-mobile-photo/10-doctor-schedule.PNG" width="250">
 
 ### 11. Appointment Detail
-![Appointment Info](doctora-mobile-photo/11-appoiment-info.PNG)
+<img src="doctora-mobile-photo/11-appoiment-info.PNG" width="250">
 
 ### 12. Manual Select Doctor
-![Manual Select Doctor](doctora-mobile-photo/12-manual-select-doctor.PNG)
-![Manual Select Doctor 2](doctora-mobile-photo/12.2-manual-select-doctor.PNG)
+<img src="doctora-mobile-photo/12-manual-select-doctor.PNG" width="250">
+<img src="doctora-mobile-photo/12.2-manual-select-doctor.PNG" width="250">
